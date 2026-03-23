@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Reopen Task</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; }
+    .box { max-width:720px; margin:0 auto; }
+    label { display:block; margin-top:12px; font-weight:600; }
+    input, button, textarea { width:100%; padding:8px 10px; margin-top:6px; box-sizing:border-box; }
+    .row { display:flex; gap:8px; }
+    .row > * { flex:1; }
+    .status { margin-top:12px; padding:8px; background:#f3f4f6; border-radius:6px; min-height:40px }
+    .log { white-space:pre-wrap; font-family:monospace; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Admin - Reopen Task (Debug)</h1>
+    <p>Use this page to broadcast a <code>claim:reopened</code> event or call the debug broadcast endpoint.</p>
+
+    <label for="claimId">Claim ID</label>
+    <input id="claimId" placeholder="5956381d-b277-496e-9a5c-787a00b9d91d" />
+
+    <label for="newStatus">New status (optional)</label>
+    <input id="newStatus" placeholder="on-progress" value="on-progress" />
+
+    <label for="oldStatus">Old status (optional)</label>
+    <input id="oldStatus" placeholder="rejected" value="rejected" />
+
+    <div style="margin-top:12px" class="row">
+      <button id="emitSocket">Emit via Socket.IO</button>
+      <button id="postBroadcast">POST /debug/broadcast</button>
+    </div>
+
+    <div class="status">
+      <div><strong>Socket Status:</strong> <span id="socketStatus">disconnected</span></div>
+      <div style="margin-top:8px"><strong>Response / Log:</strong></div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <script>
+    // Try to use socket.io served by the server; fallback to CDN if not available
+    (function() {
+      function appendLog(msg){ const el = document.getElementById('log'); el.textContent = msg + '\n' + el.textContent; }
+
+      function safeJSON(obj){ try { return JSON.stringify(obj); } catch(e){ return String(obj); } }
+
+      // Load socket.io script if needed
+      function ensureSocket(cb){
+        if (window.io) return cb();
+        const s = document.createElement('script');
+        s.src = '/socket.io/socket.io.js';
+        s.onload = function(){ cb(); };
+        s.onerror = function(){
+          // fallback CDN
+          const s2 = document.createElement('script');
+          s2.src = 'https://cdn.socket.io/4.5.4/socket.io.min.js';
+          s2.onload = cb;
+          s2.onerror = function(){ appendLog('Failed to load socket.io client.'); };
+          document.head.appendChild(s2);
+        };
+        document.head.appendChild(s);
+      }
+
+      ensureSocket(function(){
+        try {
+          const socket = window.io ? io() : null;
+          const statusEl = document.getElementById('socketStatus');
+          if (!socket) {
+            statusEl.textContent = 'socket.io not loaded';
+            appendLog('Socket.IO client not available');
+          } else {
+            statusEl.textContent = 'connecting...';
+            socket.on('connect', () => { statusEl.textContent = 'connected'; appendLog('socket connected: ' + socket.id); });
+            socket.on('connect_error', (err) => { statusEl.textContent = 'connect_error'; appendLog('connect_error: ' + safeJSON(err)); });
+            socket.on('disconnect', (reason) => { statusEl.textContent = 'disconnected'; appendLog('socket disconnected: ' + reason); });
+            socket.on('claim:reopened', (data) => { appendLog('claim:reopened received: ' + safeJSON(data)); });
+
+            document.getElementById('emitSocket').addEventListener('click', function(){
+              const claimId = document.getElementById('claimId').value.trim();
+              const newStatus = document.getElementById('newStatus').value.trim() || 'on-progress';
+              const oldStatus = document.getElementById('oldStatus').value.trim() || 'rejected';
+              if (!claimId) { appendLog('Please enter claimId'); return; }
+              const payload = { claimId, newStatus, oldStatus };
+              socket.emit('claim:reopened', payload);
+              appendLog('Emitted claim:reopened -> ' + safeJSON(payload));
+            });
+
+            document.getElementById('postBroadcast').addEventListener('click', function(){
+              const claimId = document.getElementById('claimId').value.trim();
+              const newStatus = document.getElementById('newStatus').value.trim() || 'on-progress';
+              const oldStatus = document.getElementById('oldStatus').value.trim() || 'rejected';
+              if (!claimId) { appendLog('Please enter claimId'); return; }
+              const body = { claimId, newStatus, oldStatus };
+              fetch('/debug/broadcast', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+              }).then(r => r.json()).then(j => { appendLog('POST /debug/broadcast response: ' + safeJSON(j)); }).catch(e => { appendLog('POST error: ' + e); });
+            });
+          }
+        } catch (e) { appendLog('Error initializing socket: ' + e); }
+      });
+    })();
+  </script>
+</body>
+</html>

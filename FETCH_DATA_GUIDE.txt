@@ -1,0 +1,98 @@
+# How to Fetch and View Tasks Data
+
+## Option 1: Query the Database Directly (EASIEST)
+
+1. **Open MySQL Workbench or any MySQL client**
+
+2. **Run these queries:**
+
+```sql
+-- Find Balbino's user ID
+SELECT id, username, email FROM users WHERE username LIKE '%Balbino%';
+
+-- Get the ID from the results above, then replace "1" with that ID and run:
+SELECT 
+  id,
+  customer_name,
+  description,
+  location,
+  status,
+  priority,
+  created_at
+FROM trip_claims 
+WHERE technician_id = 1
+ORDER BY created_at DESC;
+```
+
+3. **You'll see all tasks assigned to Balbino**
+
+---
+
+## Option 2: Test the Backend API Endpoint
+
+If you have curl installed:
+
+```bash
+# 1. Login to get token
+curl -X POST http://10.91.220.92:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"Balbino","password":"password"}'
+
+# Copy the token from response, then run:
+
+# 2. Fetch tasks using token
+curl -X GET http://10.91.220.92:5000/api/technician/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+---
+
+## Option 3: Check in Flutter App Browser Console
+
+1. **Open Flutter app in Chrome**
+2. **Press F12** to open DevTools
+3. **Click Console tab**
+4. **Login as Balbino**
+5. **Look for logs showing:**
+   - `✅ Tasks loaded: count=X`
+   - Task details printed to console
+
+The console will show the exact API response with all task data.
+
+---
+
+## Expected Data Structure
+
+Each task should have:
+```json
+{
+  "id": "claim_001",
+  "title": "Road Damage Assessment",
+  "description": "Assess damage at intersection",
+  "location": "Main Street",
+  "status": "pending",
+  "priority": "high",
+  "clientName": "John Doe",
+  "clientPhone": "+1234567890",
+  "assignedDate": "2025-02-13T10:00:00Z"
+}
+```
+
+---
+
+## Troubleshooting
+
+### If Database Shows 0 Tasks
+- Run INSERT_TEST_TASKS.sql to add test data
+- Verify technician_id matches Balbino's user ID
+
+### If API Returns Empty []
+- Check backend is running
+- Verify JWT token is valid
+- Check that tasks exist in database
+
+### If Flutter Shows 0 Tasks
+- Open browser console (F12)
+- Look for error messages
+- Try hot reload (press 'r')
+
