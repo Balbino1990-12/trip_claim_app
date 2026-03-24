@@ -80,7 +80,10 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     // Validate phone number: must be exactly 10 digits
-    final phoneNumber = _phoneController.text.replaceAll(RegExp(r'\D'), ''); // Remove non-digits
+    final phoneNumber = _phoneController.text.replaceAll(
+      RegExp(r'\D'),
+      '',
+    ); // Remove non-digits
     if (phoneNumber.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -94,9 +97,9 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Password must be at least 6 characters')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
+      );
       return;
     }
 
@@ -112,12 +115,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _submitRegistration() async {
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registering user...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Registering user...')));
 
       // Clean phone number: remove all non-digit characters
-      final cleanedPhoneNumber = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+      final cleanedPhoneNumber = _phoneController.text.replaceAll(
+        RegExp(r'\D'),
+        '',
+      );
 
       // Send registration data to database
       final result = await ApiService.registerUser(
@@ -129,14 +135,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (result.success && result.data != null) {
         // Extract token from response
-        final token = result.data!['token'] ?? 
-                      result.data!['accessToken'];
+        final token = result.data!['token'] ?? result.data!['accessToken'];
 
         if (token != null) {
           // Sync token to both services
           ApiService.setAuthToken(token);
           TripClaimUploadService.setAuthToken(token);
-          }
+        }
 
         // Save phone number locally
         await LocalStorageService.saveUserPhone(_phoneController.text);
@@ -163,7 +168,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     const Text(
                       'Registration successful',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -180,7 +188,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           Expanded(
                             child: Text(
                               'Your account has been created successfully.',
-                              style: TextStyle(fontSize: 13, color: Colors.green),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.green,
+                              ),
                             ),
                           ),
                         ],
@@ -199,7 +210,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       );
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                    ),
                     child: const Text('Continue'),
                   ),
                 ],
@@ -228,7 +241,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Text(
                       result.message,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -256,7 +272,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 actions: [
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
                     child: const Text('OK'),
                   ),
                 ],
@@ -267,9 +285,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -350,7 +368,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                      _passwordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {

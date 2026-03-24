@@ -32,8 +32,7 @@ class NetworkService {
     _connectivityStream.listen((List<ConnectivityResult> results) {
       _updateUrlBasedOnNetwork();
     });
-
-    }
+  }
 
   /// Update API URL based on current network type
   Future<void> _updateUrlBasedOnNetwork() async {
@@ -43,18 +42,17 @@ class NetworkService {
 
       if (result.contains(ConnectivityResult.wifi)) {
         newUrl = networkApiUrls['wifi']!;
-        } else if (result.contains(ConnectivityResult.mobile)) {
+      } else if (result.contains(ConnectivityResult.mobile)) {
         newUrl = networkApiUrls['mobile']!;
-        } else if (result.contains(ConnectivityResult.ethernet)) {
+      } else if (result.contains(ConnectivityResult.ethernet)) {
         newUrl = networkApiUrls['ethernet']!;
-        } else if (result.contains(ConnectivityResult.none)) {
+      } else if (result.contains(ConnectivityResult.none)) {
         return;
       }
 
       // Update API service base URL
       ApiService.setBaseUrl(newUrl);
-      } catch (e) {
-      }
+    } catch (e) {}
   }
 
   /// Get current connectivity status
@@ -86,5 +84,5 @@ class NetworkService {
   /// Update network URL mapping (useful for dynamic configuration)
   static void updateNetworkUrl(String networkType, String url) {
     networkApiUrls[networkType] = url;
-    }
+  }
 }

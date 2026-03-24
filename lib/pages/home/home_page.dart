@@ -261,8 +261,11 @@ class _HomeContentState extends State<_HomeContent> {
                           ),
                         ],
                       ),
-                      Icon(Icons.check_circle,
-                          color: const Color(0xFF87CEEB), size: 24),
+                      Icon(
+                        Icons.check_circle,
+                        color: const Color(0xFF87CEEB),
+                        size: 24,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -291,8 +294,11 @@ class _HomeContentState extends State<_HomeContent> {
                           ),
                         ],
                       ),
-                      Icon(Icons.phone,
-                          color: const Color(0xFF87CEEB), size: 24),
+                      Icon(
+                        Icons.phone,
+                        color: const Color(0xFF87CEEB),
+                        size: 24,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -322,7 +328,10 @@ class _HomeContentState extends State<_HomeContent> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
@@ -522,7 +531,11 @@ class _HomeContentState extends State<_HomeContent> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 14),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               'Card Services',
@@ -664,4 +677,3 @@ class _ServiceButton extends StatelessWidget {
     );
   }
 }
-

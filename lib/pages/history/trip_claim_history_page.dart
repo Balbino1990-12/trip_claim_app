@@ -20,18 +20,24 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
   int _totalPages = 1;
   String? _errorMessage;
   Map<String, dynamic>? _lastResponse;
-  
+
   // Technician cache to avoid duplicate API calls
   final Map<String, Map<String, dynamic>> _technicianCache = {};
 
-  final List<String> _statuses = ['all', 'pending', 'on-progress', 'approved', 'rejected', 'completed'];
+  final List<String> _statuses = [
+    'all',
+    'pending',
+    'on-progress',
+    'approved',
+    'rejected',
+    'completed',
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadClaims();
   }
-
 
   Future<void> _loadClaims() async {
     setState(() => _isLoading = true);
@@ -44,10 +50,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
 
       if (response['success'] == true) {
         final claimsData = response['data'] ?? [];
-        
+
         // Enrich claims with technician data from backend
         await _enrichClaimsWithTechnician(claimsData);
-        
+
         setState(() {
           _claims = claimsData;
           final pagination = response['pagination'] ?? {};
@@ -55,7 +61,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           _errorMessage = null;
           _lastResponse = response;
         });
-        
       } else {
         final errorMsg = response['message'] ?? 'Failed to load claims';
         setState(() {
@@ -63,18 +68,18 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           _lastResponse = response;
           _claims = [];
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Error: $e';
         _claims = [];
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading claims: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading claims: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -101,14 +106,16 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       _loadClaims();
     }
   }
-  
+
   /// Fetch technician data by ID
-  Future<Map<String, dynamic>?> _fetchTechnicianData(String technicianId) async {
+  Future<Map<String, dynamic>?> _fetchTechnicianData(
+    String technicianId,
+  ) async {
     // Check cache first
     if (_technicianCache.containsKey(technicianId)) {
       return _technicianCache[technicianId];
     }
-    
+
     try {
       final techData = await ApiService.getTechnicianById(technicianId);
       if (techData != null) {
@@ -128,23 +135,27 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       if (claim is! Map) {
         continue;
       }
-      
+
       final status = claim['status']?.toString().toLowerCase() ?? '';
-      final isOnProgress = status.contains('progress') || status == 'on progress' || status == 'inprogress';
-      
+      final isOnProgress =
+          status.contains('progress') ||
+          status == 'on progress' ||
+          status == 'inprogress';
+
       if (!isOnProgress) {
         continue;
       }
-      
+
       // Check 1: Flattened fields in claim
-      if (claim['technicalUserName'] != null || claim['technicalUserPhone'] != null) {
+      if (claim['technicalUserName'] != null ||
+          claim['technicalUserPhone'] != null) {
         claim['_technicianData'] = {
           'name': claim['technicalUserName'] ?? 'N/A',
           'phoneNumber': claim['technicalUserPhone'] ?? 'N/A',
         };
         continue;
       }
-      
+
       // Also check for 'name' and 'phoneNumber' as alternatives
       if (claim['name'] != null || claim['phoneNumber'] != null) {
         claim['_technicianData'] = {
@@ -153,33 +164,30 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         };
         continue;
       }
-      
+
       // Check 2: assignedTechnicalUserId - fetch via API
       if (claim['assignedTechnicalUserId'] != null) {
         final techId = claim['assignedTechnicalUserId'];
         final techData = await _fetchTechnicianData(techId);
-        
+
         if (techData != null) {
           claim['_technicianData'] = techData;
           continue;
-        } else {
-          }
+        } else {}
       }
-      
+
       // Check 3: Technician object fields
       if (claim['assignedTechnician'] is Map) {
         claim['_technicianData'] = claim['assignedTechnician'];
-        } else if (claim['assigned_technician'] is Map) {
+      } else if (claim['assigned_technician'] is Map) {
         claim['_technicianData'] = claim['assigned_technician'];
-        } else if (claim['Technician'] is Map) {
+      } else if (claim['Technician'] is Map) {
         claim['_technicianData'] = claim['Technician'];
-        } else if (claim['technician'] is Map) {
+      } else if (claim['technician'] is Map) {
         claim['_technicianData'] = claim['technician'];
-        } else {
-        }
+      } else {}
     }
-    
-    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,9 +198,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
               children: [
                 const SizedBox(height: 20),
                 const Expanded(
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
               ],
             )
@@ -201,7 +207,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 children: [
                   const SizedBox(height: 30),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -222,8 +231,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     );
   }
 
-
-
   Widget _buildStatusFilter() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,49 +248,51 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: _statuses
-                .map((status) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => _changeStatus(status),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
+                .map(
+                  (status) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => _changeStatus(status),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _selectedStatus == status
+                              ? const Color(0xFF0070BA)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color: _selectedStatus == status
                                 ? const Color(0xFF0070BA)
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _selectedStatus == status
-                                  ? const Color(0xFF0070BA)
-                                  : Colors.grey.shade300,
-                              width: 1.5,
-                            ),
-                            boxShadow: _selectedStatus == status
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.15),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : [],
+                                : Colors.grey.shade300,
+                            width: 1.5,
                           ),
-                          child: Text(
-                            status.toUpperCase(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                              color: _selectedStatus == status
-                                  ? Colors.white
-                                  : Colors.grey[700],
-                            ),
+                          boxShadow: _selectedStatus == status
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.15),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: _selectedStatus == status
+                                ? Colors.white
+                                : Colors.grey[700],
                           ),
                         ),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -383,10 +392,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           const SizedBox(height: 16),
           Text(
             'No claims found',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 48),
         ],
@@ -394,23 +400,23 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     }
 
     return Column(
-      children: List.generate(
-        _claims.length,
-        (index) {
-          final claim = _claims[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildClaimCard(claim),
-          );
-        },
-      ),
+      children: List.generate(_claims.length, (index) {
+        final claim = _claims[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildClaimCard(claim),
+        );
+      }),
     );
   }
 
   Widget _buildClaimCard(dynamic claim) {
-    final status = (claim['status'] ?? 'pending').toString().trim().toLowerCase();
+    final status = (claim['status'] ?? 'pending')
+        .toString()
+        .trim()
+        .toLowerCase();
     final statusColor = _getStatusColor(status);
-    
+
     // Handle location - it's a Map from backend
     final locationData = claim['location'];
     String location = 'N/A';
@@ -426,32 +432,34 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     } else if (locationData is String) {
       location = locationData;
     }
-    
+
     final description = claim['description'] ?? 'No description';
     final createdAt = claim['createdAt'] ?? '';
     final images = claim['images'] as List? ?? [];
     final imagesCount = images.length;
     final notes = claim['notes'] ?? '';
-    
+
     // Extract technician info - only for 'On Progress' status
     String technicianName = 'N/A';
     String technicianPhone = 'N/A';
     String clientPhone = 'N/A';
     final isOnProgress = status.contains('progress');
-    
+
     if (isOnProgress) {
       // For On Progress status: extract technician name and phone
       if (claim['_technicianData'] is Map) {
         final techData = claim['_technicianData'] as Map<String, dynamic>;
         technicianName = techData['name'] ?? techData['Username'] ?? 'N/A';
-        technicianPhone = techData['phoneNumber'] ?? techData['PhoneNumber'] ?? 'N/A';
+        technicianPhone =
+            techData['phoneNumber'] ?? techData['PhoneNumber'] ?? 'N/A';
       } else {
         // Try direct claim fields
         technicianName = claim['technicalUserName'] ?? claim['name'] ?? 'N/A';
-        technicianPhone = claim['technicalUserPhone'] ?? claim['phoneNumber'] ?? 'N/A';
+        technicianPhone =
+            claim['technicalUserPhone'] ?? claim['phoneNumber'] ?? 'N/A';
       }
     }
-    
+
     // Get client phone
     if (claim['ClientPhone'] != null) {
       clientPhone = claim['ClientPhone'];
@@ -460,7 +468,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     } else if (claim['UserPhone'] != null) {
       clientPhone = claim['UserPhone'];
     }
-    
+
     final isInProgress = isOnProgress;
 
     return Container(
@@ -468,10 +476,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.08),
@@ -515,7 +520,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -542,11 +550,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    location.length > 40 ? '${location.substring(0, 40)}...' : location,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
-                    ),
+                    location.length > 40
+                        ? '${location.substring(0, 40)}...'
+                        : location,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                   ),
                 ),
               ],
@@ -554,32 +561,18 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
             const SizedBox(height: 6),
             Row(
               children: [
-                Icon(
-                  Icons.image_outlined,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
+                Icon(Icons.image_outlined, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
                 Text(
                   'Images: $imagesCount',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 const SizedBox(width: 12),
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
                 Text(
                   _formatDate(createdAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -593,19 +586,14 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
               children: [
                 // Show "On The Way" animation inside technician card
                 _buildDetailRow('Location', location),
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
+                Divider(color: Colors.grey.shade300),
                 // Show progress timeline instead of simple status
                 _buildProgressTimeline(status),
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
+                Divider(color: Colors.grey.shade300),
                 // Show technician section ONLY if 'On Progress' status
-                if (isOnProgress && (technicianName != 'N/A' || technicianPhone != 'N/A')) ...[
-                  Divider(
-                    color: Colors.grey.shade300,
-                  ),
+                if (isOnProgress &&
+                    (technicianName != 'N/A' || technicianPhone != 'N/A')) ...[
+                  Divider(color: Colors.grey.shade300),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -633,16 +621,18 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                         if (technicianPhone != 'N/A')
                           _buildDetailRow('Phone', technicianPhone)
                         else
-                          _buildDetailRow('Phone', technicianPhone, Colors.grey),
+                          _buildDetailRow(
+                            'Phone',
+                            technicianPhone,
+                            Colors.grey,
+                          ),
                       ],
                     ),
                   ),
                 ],
-                // Show Client Phone  
+                // Show Client Phone
                 if (clientPhone != 'N/A') ...[
-                  Divider(
-                    color: Colors.grey.shade300,
-                  ),
+                  Divider(color: Colors.grey.shade300),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -667,9 +657,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                     ),
                   ),
                 ],
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
+                Divider(color: Colors.grey.shade300),
                 const Text(
                   'Description:',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -686,25 +674,21 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                   Text(notes),
                 ],
                 if (imagesCount > 0) ...[
-                  Divider(
-                    color: Colors.grey.shade300,
-                  ),
+                  Divider(color: Colors.grey.shade300),
                   const Text(
                     'Images',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   const SizedBox(height: 12),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
                     itemCount: imagesCount,
                     itemBuilder: (context, idx) {
                       final imageData = images[idx];
@@ -713,10 +697,19 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                       String? rawImage;
                       if (imageData is Map) {
                         final possibleFields = [
-                          'url', 'image', 'path', 'file_path', 'filePath', 'fileUrl', 'uploadUrl', 'filename'
+                          'url',
+                          'image',
+                          'path',
+                          'file_path',
+                          'filePath',
+                          'fileUrl',
+                          'uploadUrl',
+                          'filename',
                         ];
                         for (var f in possibleFields) {
-                          if (imageData.containsKey(f) && imageData[f] != null && imageData[f].toString().isNotEmpty) {
+                          if (imageData.containsKey(f) &&
+                              imageData[f] != null &&
+                              imageData[f].toString().isNotEmpty) {
                             rawImage = imageData[f].toString();
                             break;
                           }
@@ -728,7 +721,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                         rawImage = imageData.toString();
                       }
 
-                      final isDataUri = rawImage != null && rawImage.startsWith('data:') && rawImage.contains('base64,');
+                      final isDataUri =
+                          rawImage != null &&
+                          rawImage.startsWith('data:') &&
+                          rawImage.contains('base64,');
 
                       // More robust base64 heuristics:
                       // - Common image signature prefixes when base64 encoded
@@ -737,7 +733,13 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                       bool isLikelyBase64 = false;
                       if (rawImage != null) {
                         final s = rawImage;
-                        final prefixes = ['/9j/', 'iVBOR', 'R0lGOD', 'UklGR', 'Qk'];
+                        final prefixes = [
+                          '/9j/',
+                          'iVBOR',
+                          'R0lGOD',
+                          'UklGR',
+                          'Qk',
+                        ];
                         for (var p in prefixes) {
                           if (s.startsWith(p)) {
                             isLikelyBase64 = true;
@@ -753,7 +755,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                         // Heuristic: if string is composed only of base64 chars and padding, and reasonably long
                         if (!isLikelyBase64) {
                           final base64Like = RegExp(r'^[A-Za-z0-9+/=\s]+$');
-                          if (s.length > 200 && base64Like.hasMatch(s)) isLikelyBase64 = true;
+                          if (s.length > 200 && base64Like.hasMatch(s))
+                            isLikelyBase64 = true;
                         }
                       }
 
@@ -762,16 +765,18 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                         final normalizedPreview = (rawImage ?? '').length > 120
                             ? '${(rawImage ?? '').substring(0, 120)}...'
                             : (rawImage ?? '');
-                        final normalizedUrl = (rawImage != null && !isLikelyBase64 && !isDataUri)
+                        final normalizedUrl =
+                            (rawImage != null && !isLikelyBase64 && !isDataUri)
                             ? _normalizeImageUrl(rawImage)
                             : '(in-memory/base64)';
-                        } catch (e) {
-                        }
+                      } catch (e) {}
 
                       return GestureDetector(
                         onTap: () {
-                          final preview = (rawImage ?? '').length > 60 ? '${(rawImage ?? '').substring(0, 60)}...' : (rawImage ?? '');
-                          },
+                          final preview = (rawImage ?? '').length > 60
+                              ? '${(rawImage ?? '').substring(0, 60)}...'
+                              : (rawImage ?? '');
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey[300]!),
@@ -779,39 +784,46 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                           ),
                           child: (rawImage != null && rawImage.isNotEmpty)
                               ? (isDataUri
-                                  // data:image/...;base64,<data>
-                                  ? _buildBase64Image(rawImage.split('base64,').last)
-                                  : (isLikelyBase64
-                                      ? _buildBase64Image(rawImage)
-                                      : Image.network(
-                                          _normalizeImageUrl(rawImage),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            final imageUrl = _normalizeImageUrl(rawImage!);
-                                            return _buildImageFromUrlFallback(imageUrl);
-                                          },
-                                          loadingBuilder: (context, child, progress) {
-                                            if (progress == null) return child;
-                                            return _buildImageLoading();
-                                          },
-                                        )))
+                                    // data:image/...;base64,<data>
+                                    ? _buildBase64Image(
+                                        rawImage.split('base64,').last,
+                                      )
+                                    : (isLikelyBase64
+                                          ? _buildBase64Image(rawImage)
+                                          : Image.network(
+                                              _normalizeImageUrl(rawImage),
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    final imageUrl =
+                                                        _normalizeImageUrl(
+                                                          rawImage!,
+                                                        );
+                                                    return _buildImageFromUrlFallback(
+                                                      imageUrl,
+                                                    );
+                                                  },
+                                              loadingBuilder:
+                                                  (context, child, progress) {
+                                                    if (progress == null)
+                                                      return child;
+                                                    return _buildImageLoading();
+                                                  },
+                                            )))
                               : _buildImageError(),
                         ),
                       );
                     },
                   ),
                 ],
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
+                Divider(color: Colors.grey.shade300),
                 _buildDetailRow('Submitted', _formatDate(createdAt)),
-                Divider(
-                  color: Colors.grey.shade300,
+                Divider(color: Colors.grey.shade300),
+                _buildDetailRow(
+                  'Last Updated',
+                  _formatDate(claim['updatedAt'] ?? ''),
                 ),
-                _buildDetailRow('Last Updated', _formatDate(claim['updatedAt'] ?? '')),
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
+                Divider(color: Colors.grey.shade300),
                 _buildDetailRow('Claim ID', claim['id'] ?? 'N/A'),
               ],
             ),
@@ -827,18 +839,13 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       children: [
         Expanded(
           flex: 2,
-          child: Text(
-            '$label:',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          child: Text('$label:', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         Expanded(
           flex: 3,
           child: Text(
             value,
-            style: TextStyle(
-              color: valueColor ?? Colors.black87,
-            ),
+            style: TextStyle(color: valueColor ?? Colors.black87),
           ),
         ),
       ],
@@ -852,13 +859,13 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     } else {
       status = status.trim().toLowerCase();
     }
-    
+
     // Map status to progress index
     int currentStep = _getProgressStep(status);
     if (currentStep < 0) {
       currentStep = 0; // Default to waiting state
-      }
-    
+    }
+
     int totalSteps = 4;
     int progressPercent = ((currentStep + 1) / totalSteps * 100).toInt();
     final steps = [
@@ -883,10 +890,11 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         'color': Colors.teal,
       },
     ];
-    
+
     // Get safe color reference
     final currentStepIndex = currentStep.clamp(0, totalSteps - 1);
-    final currentStepColor = (steps[currentStepIndex]['color'] as Color?) ?? Colors.blue;
+    final currentStepColor =
+        (steps[currentStepIndex]['color'] as Color?) ?? Colors.blue;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -960,7 +968,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 child: AnimatedContainer(
                   duration: Duration(milliseconds: 700),
                   curve: Curves.easeInOutCubic,
-                  width: ((currentStep + 1) / totalSteps) *
+                  width:
+                      ((currentStep + 1) / totalSteps) *
                       (MediaQuery.of(context).size.width - 60),
                   height: 8,
                   decoration: BoxDecoration(
@@ -1003,7 +1012,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 child: AnimatedContainer(
                   duration: Duration(milliseconds: 700),
                   curve: Curves.easeInOutCubic,
-                  width: ((currentStep + 1) / totalSteps) *
+                  width:
+                      ((currentStep + 1) / totalSteps) *
                       (MediaQuery.of(context).size.width - 60),
                   height: 8,
                   decoration: BoxDecoration(
@@ -1036,10 +1046,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                           duration: Duration(seconds: 1),
                           curve: Curves.easeInOut,
                           builder: (context, scale, child) {
-                            return Transform.scale(
-                              scale: scale,
-                              child: child,
-                            );
+                            return Transform.scale(scale: scale, child: child);
                           },
                           child: _buildStepCircle(
                             stepColor,
@@ -1067,9 +1074,11 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                                 fontSize: 11,
                                 fontWeight: isActive
                                     ? FontWeight.bold
-                                    : (isCompleted ? FontWeight.w600 : FontWeight.normal),
-                                color: isCompleted 
-                                    ? stepColor 
+                                    : (isCompleted
+                                          ? FontWeight.w600
+                                          : FontWeight.normal),
+                                color: isCompleted
+                                    ? stepColor
                                     : Colors.grey[400],
                                 letterSpacing: 0.2,
                               ),
@@ -1100,7 +1109,12 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     );
   }
 
-  Widget _buildStepCircle(Color color, IconData icon, bool isCompleted, bool isActive) {
+  Widget _buildStepCircle(
+    Color color,
+    IconData icon,
+    bool isCompleted,
+    bool isActive,
+  ) {
     return Container(
       width: 50,
       height: 50,
@@ -1110,18 +1124,15 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  color.withValues(alpha: 0.8),
-                  color,
-                ],
+                colors: [color.withValues(alpha: 0.8), color],
               )
-            : LinearGradient(
-                colors: [Color(0xFFFAFAFA), Color(0xFFF0F0F0)],
-              ),
+            : LinearGradient(colors: [Color(0xFFFAFAFA), Color(0xFFF0F0F0)]),
         border: Border.all(
-          color: isActive 
-              ? color 
-              : (isCompleted ? color.withValues(alpha: 0.7) : Colors.grey[300]!),
+          color: isActive
+              ? color
+              : (isCompleted
+                    ? color.withValues(alpha: 0.7)
+                    : Colors.grey[300]!),
           width: isActive ? 4 : (isCompleted ? 2 : 1.5),
         ),
         boxShadow: [
@@ -1158,7 +1169,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
 
   int _getProgressStep(String status) {
     final cleanStatus = status.toLowerCase().trim();
-    
+
     switch (cleanStatus) {
       case 'pending':
         return 0; // Waiting
@@ -1191,7 +1202,9 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 onTap: _currentPage > 1 ? _previousPage : null,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _currentPage > 1 ? const Color(0xFF0070BA) : Colors.grey[300],
+                    color: _currentPage > 1
+                        ? const Color(0xFF0070BA)
+                        : Colors.grey[300],
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: _currentPage > 1
                         ? [
@@ -1199,23 +1212,30 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                               color: Colors.blue.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
-                            )
+                            ),
                           ]
                         : [],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.arrow_back,
-                        color: _currentPage > 1 ? Colors.white : Colors.grey[500],
+                        color: _currentPage > 1
+                            ? Colors.white
+                            : Colors.grey[500],
                         size: 18,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'Previous',
                         style: TextStyle(
-                          color: _currentPage > 1 ? Colors.white : Colors.grey[500],
+                          color: _currentPage > 1
+                              ? Colors.white
+                              : Colors.grey[500],
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -1226,7 +1246,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
               ),
               const SizedBox(width: 20),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(10),
@@ -1246,7 +1269,9 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 onTap: _currentPage < _totalPages ? _nextPage : null,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _currentPage < _totalPages ? const Color(0xFF0070BA) : Colors.grey[300],
+                    color: _currentPage < _totalPages
+                        ? const Color(0xFF0070BA)
+                        : Colors.grey[300],
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: _currentPage < _totalPages
                         ? [
@@ -1254,17 +1279,22 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                               color: Colors.blue.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
-                            )
+                            ),
                           ]
                         : [],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
                       Text(
                         'Next',
                         style: TextStyle(
-                          color: _currentPage < _totalPages ? Colors.white : Colors.grey[500],
+                          color: _currentPage < _totalPages
+                              ? Colors.white
+                              : Colors.grey[500],
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -1272,7 +1302,9 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                       const SizedBox(width: 6),
                       Icon(
                         Icons.arrow_forward,
-                        color: _currentPage < _totalPages ? Colors.white : Colors.grey[500],
+                        color: _currentPage < _totalPages
+                            ? Colors.white
+                            : Colors.grey[500],
                         size: 18,
                       ),
                     ],
@@ -1288,7 +1320,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
 
   Color _getStatusColor(String status) {
     final cleanStatus = status.toLowerCase().trim();
-    
+
     switch (cleanStatus) {
       case 'pending':
         return Colors.orange;
@@ -1365,13 +1397,16 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       final request = await client.getUrl(Uri.parse(imageUrl));
       request.headers.set('Connection', 'close');
       final response = await request.close();
-      
+
       if (response.statusCode == 200) {
-        final bodyBytes = await response.fold<List<int>>([], (p, chunk) => p..addAll(chunk));
+        final bodyBytes = await response.fold<List<int>>(
+          [],
+          (p, chunk) => p..addAll(chunk),
+        );
         if (bodyBytes.isEmpty) {
           return _buildImageError();
         }
-        
+
         // Display directly with Image.memory
         return Image.memory(
           Uint8List.fromList(bodyBytes),
@@ -1379,7 +1414,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           errorBuilder: (context, error, stack) {
             // extra diagnostics when decode fails
             final snippetLength = bodyBytes.length < 20 ? bodyBytes.length : 20;
-            final hexSnippet = bodyBytes.take(snippetLength).map((b) => b.toRadixString(16).padLeft(2,'0')).join(' ');
+            final hexSnippet = bodyBytes
+                .take(snippetLength)
+                .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                .join(' ');
             String textSnippet;
             try {
               textSnippet = String.fromCharCodes(bodyBytes.take(100).toList());
@@ -1410,9 +1448,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         child: SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );
@@ -1429,10 +1465,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           const SizedBox(height: 4),
           Text(
             'Error',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -1457,7 +1490,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     final base = ApiService.baseUrl ?? '';
     try {
       final uri = Uri.parse(base);
-      final origin = '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
+      final origin =
+          '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
       if (path.startsWith('/')) return origin + path;
       return '$origin/$path';
     } catch (e) {
@@ -1472,17 +1506,17 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
 
   String _buildDebugInfo() {
     if (_lastResponse == null) return 'No debug info available';
-    
+
     final buffer = StringBuffer();
     buffer.writeln('Status Code: ${_lastResponse!['statusCode'] ?? 'N/A'}');
     buffer.writeln('');
-    
+
     if (_lastResponse!.containsKey('message')) {
       buffer.writeln('Message:');
       buffer.writeln('  ${_lastResponse!['message']}');
       buffer.writeln('');
     }
-    
+
     if (_lastResponse!.containsKey('error')) {
       buffer.writeln('Error Details:');
       final error = _lastResponse!['error'];
@@ -1493,20 +1527,20 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       }
       buffer.writeln('');
     }
-    
+
     if (_lastResponse!.containsKey('rawResponse')) {
       buffer.writeln('Raw Response:');
       buffer.writeln('  ${_lastResponse!['rawResponse']}');
       buffer.writeln('');
     }
-    
+
     buffer.writeln('All Fields:');
     for (var key in _lastResponse!.keys) {
       final value = _lastResponse![key];
       final valueStr = value is Map ? value.toString() : '$value';
       buffer.writeln('  $key: $valueStr');
     }
-    
+
     return buffer.toString();
   }
 }
@@ -1515,7 +1549,8 @@ class _RepeatingBikeAnimation extends StatefulWidget {
   const _RepeatingBikeAnimation();
 
   @override
-  State<_RepeatingBikeAnimation> createState() => _RepeatingBikeAnimationState();
+  State<_RepeatingBikeAnimation> createState() =>
+      _RepeatingBikeAnimationState();
 }
 
 class _RepeatingBikeAnimationState extends State<_RepeatingBikeAnimation>
@@ -1587,10 +1622,7 @@ class _RepeatingBikeAnimationState extends State<_RepeatingBikeAnimation>
                   height: 3,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.blue[300]!,
-                        Colors.blue[400]!,
-                      ],
+                      colors: [Colors.blue[300]!, Colors.blue[400]!],
                     ),
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -1629,10 +1661,9 @@ class _RepeatingBikeAnimationState extends State<_RepeatingBikeAnimation>
                         AnimatedBuilder(
                           animation: _pedalController,
                           builder: (context, child) {
-                            double pedalbounce =
-                                (_pedalController.value < 0.5)
-                                    ? _pedalController.value * 6
-                                    : (1 - _pedalController.value) * 6;
+                            double pedalbounce = (_pedalController.value < 0.5)
+                                ? _pedalController.value * 6
+                                : (1 - _pedalController.value) * 6;
                             return Transform.translate(
                               offset: Offset(0, -pedalbounce),
                               child: Icon(

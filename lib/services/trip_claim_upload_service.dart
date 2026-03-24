@@ -134,7 +134,7 @@ class TripClaimUploadService {
 
       // Add description and location
       request.fields['description'] = description;
-      
+
       // Combine latitude and longitude into location field
       if (latitude != null && longitude != null) {
         request.fields['location'] = '$latitude,$longitude';

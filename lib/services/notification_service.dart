@@ -78,7 +78,8 @@ class NotificationService {
       id: 'reopen_${DateTime.now().millisecondsSinceEpoch}',
       type: 'task_reopened',
       title: '🔓 Task Reopened',
-      message: '$taskTitle (#$claimId) has been re-opened by admin. You can now continue working on it.',
+      message:
+          '$taskTitle (#$claimId) has been re-opened by admin. You can now continue working on it.',
       data: {
         'claimId': claimId,
         'taskTitle': taskTitle,
@@ -100,7 +101,7 @@ class NotificationService {
     _reconnectTimer?.cancel();
     _channel?.sink.close();
     _isConnected = false;
-    }
+  }
 
   /// Dispose resources
   Future<void> dispose() async {

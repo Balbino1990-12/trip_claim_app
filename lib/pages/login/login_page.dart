@@ -48,34 +48,36 @@ class _LoginPageState extends State<LoginPage> {
     final userType = userData['userType']?.toString().toLowerCase() ?? '';
     final type = userData['type']?.toString().toLowerCase() ?? '';
     final department = userData['department']?.toString().toLowerCase() ?? '';
-    
+
     // Check if nested user object exists
     if (userData['user'] is Map<String, dynamic>) {
       final nestedUser = userData['user'] as Map<String, dynamic>;
       final nestedRole = nestedUser['role']?.toString().toLowerCase() ?? '';
-      final nestedUserType = nestedUser['userType']?.toString().toLowerCase() ?? '';
+      final nestedUserType =
+          nestedUser['userType']?.toString().toLowerCase() ?? '';
       final nestedType = nestedUser['type']?.toString().toLowerCase() ?? '';
-      final nestedDepartment = nestedUser['department']?.toString().toLowerCase() ?? '';
-      
-      return nestedRole.contains('technician') || 
-             nestedRole.contains('technical') ||
-             nestedUserType.contains('technician') ||
-             nestedUserType.contains('technical') ||
-             nestedType.contains('technician') ||
-             nestedType.contains('technical') ||
-             nestedDepartment.contains('technician') ||
-             nestedDepartment.contains('technical');
+      final nestedDepartment =
+          nestedUser['department']?.toString().toLowerCase() ?? '';
+
+      return nestedRole.contains('technician') ||
+          nestedRole.contains('technical') ||
+          nestedUserType.contains('technician') ||
+          nestedUserType.contains('technical') ||
+          nestedType.contains('technician') ||
+          nestedType.contains('technical') ||
+          nestedDepartment.contains('technician') ||
+          nestedDepartment.contains('technical');
     }
-    
+
     // Check the direct fields
-    return role.contains('technician') || 
-           role.contains('technical') ||
-           userType.contains('technician') ||
-           userType.contains('technical') ||
-           type.contains('technician') ||
-           type.contains('technical') ||
-           department.contains('technician') ||
-           department.contains('technical');
+    return role.contains('technician') ||
+        role.contains('technical') ||
+        userType.contains('technician') ||
+        userType.contains('technical') ||
+        type.contains('technician') ||
+        type.contains('technical') ||
+        department.contains('technician') ||
+        department.contains('technical');
   }
 
   Future<void> _handleLogin() async {
@@ -145,15 +147,15 @@ class _LoginPageState extends State<LoginPage> {
 
       if (loginResponse.success && loginResponse.data != null) {
         // Extract token from response
-        final token = loginResponse.data!['token'] ?? 
-                      loginResponse.data!['accessToken'];
+        final token =
+            loginResponse.data!['token'] ?? loginResponse.data!['accessToken'];
 
         if (token != null) {
           // Sync token to all services
           ApiService.setAuthToken(token);
           TripClaimUploadService.setAuthToken(token);
           TechnicianService.setAuthToken(token);
-          }
+        }
 
         // persist any useful user data we received
         final userData = loginResponse.data?['user'];
@@ -173,9 +175,11 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isTechnician 
-                  ? 'Welcome Technician! Redirecting to dashboard...' 
-                  : loginResponse.message),
+              content: Text(
+                isTechnician
+                    ? 'Welcome Technician! Redirecting to dashboard...'
+                    : loginResponse.message,
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -184,7 +188,9 @@ class _LoginPageState extends State<LoginPage> {
           if (isTechnician) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const TechnicianLandingPage()),
+              MaterialPageRoute(
+                builder: (context) => const TechnicianLandingPage(),
+              ),
             );
           } else {
             Navigator.pushReplacement(

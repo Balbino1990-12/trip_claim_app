@@ -39,7 +39,10 @@ class TechnicianTask {
     return TechnicianTask(
       id: json['id']?.toString() ?? 'N/A',
       claimId: json['claimId']?.toString() ?? json['id']?.toString() ?? 'N/A',
-      title: json['title']?.toString() ?? json['description']?.toString() ?? 'Untitled Task',
+      title:
+          json['title']?.toString() ??
+          json['description']?.toString() ??
+          'Untitled Task',
       description: json['description']?.toString() ?? '',
       location: _extractLocation(json),
       status: json['status']?.toString().toLowerCase() ?? 'pending',
@@ -63,7 +66,8 @@ class TechnicianTask {
         if (image is String) {
           imagesList.add(image);
         } else if (image is Map) {
-          final imageUrl = image['imageUrl']?.toString() ?? image['url']?.toString();
+          final imageUrl =
+              image['imageUrl']?.toString() ?? image['url']?.toString();
           if (imageUrl != null) {
             imagesList.add(imageUrl);
           }
@@ -244,10 +248,11 @@ class TechnicianService {
   static void setAuthToken(String token) {
     _bearerToken = token;
     ApiService.setAuthToken(token);
-    }
+  }
 
   /// Check if user is authenticated
-  static bool isAuthenticated() => _bearerToken != null && _bearerToken!.isNotEmpty;
+  static bool isAuthenticated() =>
+      _bearerToken != null && _bearerToken!.isNotEmpty;
 
   /// Get technician statistics from API
   static Future<TechnicianStats> getTechnicianStats() async {
@@ -260,13 +265,15 @@ class TechnicianService {
       final url = '${ApiService.baseUrl}/technician/stats';
       print('Fetching technician stats from: $url');
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $_bearerToken',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         try {
@@ -300,16 +307,16 @@ class TechnicianService {
     try {
       // Get tasks using the same fallback method
       final tasks = await getAssignedTasks();
-      
+
       if (tasks.isEmpty) {
         return TechnicianStats.getDefault();
       }
-      
+
       // Count by status
       int pending = 0;
       int inProgress = 0;
       int completed = 0;
-      
+
       for (final task in tasks) {
         final status = task.status.toLowerCase();
         if (status == 'pending') {
@@ -320,7 +327,7 @@ class TechnicianService {
           completed++;
         }
       }
-      
+
       final stats = TechnicianStats(
         pendingTasks: pending,
         inProgressTasks: inProgress,
@@ -328,7 +335,7 @@ class TechnicianService {
         rating: 4.8, // Default rating
         totalTasksToday: tasks.length,
       );
-      
+
       return stats;
     } catch (e) {
       return TechnicianStats.getDefault();
@@ -348,13 +355,15 @@ class TechnicianService {
       print('Fetching tasks from: $url');
 
       try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Authorization': 'Bearer $_bearerToken',
-            'Content-Type': 'application/json',
-          },
-        ).timeout(const Duration(seconds: 15));
+        final response = await http
+            .get(
+              Uri.parse(url),
+              headers: {
+                'Authorization': 'Bearer $_bearerToken',
+                'Content-Type': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 15));
 
         if (response.statusCode == 200) {
           try {
@@ -371,7 +380,10 @@ class TechnicianService {
             }
 
             final tasks = taskList
-                .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
+                .map(
+                  (item) =>
+                      TechnicianTask.fromJson(item as Map<String, dynamic>),
+                )
                 .toList();
             return tasks;
           } catch (parseError) {
@@ -406,18 +418,20 @@ class TechnicianService {
       }
 
       final url = '${ApiService.baseUrl}/claims/my-claims';
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $_bearerToken',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         try {
           final json = jsonDecode(response.body);
-          
+
           List taskList = [];
           if (json is List) {
             taskList = json;
@@ -426,9 +440,11 @@ class TechnicianService {
           } else if (json is Map && json.containsKey('claims')) {
             taskList = json['claims'] is List ? json['claims'] : [];
           }
-          
+
           final tasks = taskList
-              .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) => TechnicianTask.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
           return tasks;
         } catch (e) {
@@ -453,18 +469,20 @@ class TechnicianService {
       }
 
       final url = '${ApiService.baseUrl}/claims';
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $_bearerToken',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         try {
           final json = jsonDecode(response.body);
-          
+
           List taskList = [];
           if (json is List) {
             taskList = json;
@@ -473,22 +491,26 @@ class TechnicianService {
           } else if (json is Map && json.containsKey('claims')) {
             taskList = json['claims'] is List ? json['claims'] : [];
           }
-          
+
           // Filter out completed tasks to show only active ones
           final tasks = taskList
               .where((item) {
-                final status = (item is Map ? item['status']?.toString().toLowerCase() : '');
+                final status = (item is Map
+                    ? item['status']?.toString().toLowerCase()
+                    : '');
                 return status != 'completed' && status != 'rejected';
               })
-              .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) => TechnicianTask.fromJson(item as Map<String, dynamic>),
+              )
               .toList();
-          
+
           return tasks;
         } catch (e) {
           return [];
         }
       }
-      
+
       return [];
     } catch (e) {
       return [];
@@ -503,14 +525,16 @@ class TechnicianService {
       }
 
       final requestBody = jsonEncode({'status': newStatus});
-      final response = await http.put(
-        Uri.parse('${ApiService.baseUrl}/claims/$claimId/status'),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('${ApiService.baseUrl}/claims/$claimId/status'),
+            headers: {
+              'Authorization': 'Bearer $_bearerToken',
+              'Content-Type': 'application/json',
+            },
+            body: requestBody,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
@@ -530,13 +554,15 @@ class TechnicianService {
       }
 
       final url = '${ApiService.baseUrl}/claims/$claimId/request-reopen';
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $_bearerToken',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return true;
@@ -562,7 +588,9 @@ class TechnicianService {
       request.headers['Authorization'] = 'Bearer $_bearerToken';
       request.files.add(await http.MultipartFile.fromPath('image', photoPath));
 
-      final response = await request.send().timeout(const Duration(seconds: 30));
+      final response = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
 
       if (response.statusCode == 200) {
         return true;

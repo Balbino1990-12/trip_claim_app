@@ -38,10 +38,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
     _initializeSocketIO();
     _loadTasks();
     _pages = [
-      _TechnicianDashboard(
-        tasksFuture: _tasksFuture,
-        onRefresh: _loadTasks,
-      ),
+      _TechnicianDashboard(tasksFuture: _tasksFuture, onRefresh: _loadTasks),
       const Center(child: Text('Assigned Tasks - Coming Soon')),
       const Center(child: Text('Analytics - Coming Soon')),
       const Center(child: Text('Account - Coming Soon')),
@@ -56,63 +53,66 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       final baseUrl = ApiService.baseUrl;
       final derived = baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
       // Prefer explicit fixedSocketUrl, otherwise derived from ApiService, then localhost
-      final url = fixedSocketUrl.isNotEmpty ? fixedSocketUrl : (derived.isNotEmpty ? derived : 'http://localhost:5000');
+      final url = fixedSocketUrl.isNotEmpty
+          ? fixedSocketUrl
+          : (derived.isNotEmpty ? derived : 'http://localhost:5000');
 
-      _socket = IO.io(
-        url,
-        <String, dynamic>{
-          'autoConnect': true,
-          'reconnection': true,
-          'reconnectionDelay': 1000,
-          'reconnectionDelayMax': 5000,
-          'reconnectionAttempts': 5,
-          'transports': ['websocket', 'polling'], // websocket preferred, polling as fallback
-          'forceNew': true,
-        },
-      );
+      _socket = IO.io(url, <String, dynamic>{
+        'autoConnect': true,
+        'reconnection': true,
+        'reconnectionDelay': 1000,
+        'reconnectionDelayMax': 5000,
+        'reconnectionAttempts': 5,
+        'transports': [
+          'websocket',
+          'polling',
+        ], // websocket preferred, polling as fallback
+        'forceNew': true,
+      });
 
-          // Attach shared handlers
+      // Attach shared handlers
       _socket?.on('connect', (_) {
         _socketConnected = true;
         _fallbackTimer?.cancel();
-        });
+      });
 
-          _socket?.on('claim:reopened', (data) {
-            try {
-              final cid = (data is Map) ? data['claimId']?.toString() ?? 'unknown' : data.toString();
-              } catch (e) {
-              }
+      _socket?.on('claim:reopened', (data) {
+        try {
+          final cid = (data is Map)
+              ? data['claimId']?.toString() ?? 'unknown'
+              : data.toString();
+        } catch (e) {}
 
-            if (mounted) {
-              // Show toast and update cache
-              try {
-                final claimId = (data is Map) ? data['claimId']?.toString() ?? 'unknown' : data.toString();
-                final notification = NotificationMessage(
-                  id: 'reopen_${DateTime.now().millisecondsSinceEpoch}',
-                  type: 'task_reopened',
-                  title: 'Task Reopened',
-                  message: 'Task #$claimId was re-opened by admin',
-                  data: {'claimId': claimId},
-                  timestamp: DateTime.now(),
-                );
-                _showNotificationToast(notification);
-              } catch (e) {
-                }
+        if (mounted) {
+          // Show toast and update cache
+          try {
+            final claimId = (data is Map)
+                ? data['claimId']?.toString() ?? 'unknown'
+                : data.toString();
+            final notification = NotificationMessage(
+              id: 'reopen_${DateTime.now().millisecondsSinceEpoch}',
+              type: 'task_reopened',
+              title: 'Task Reopened',
+              message: 'Task #$claimId was re-opened by admin',
+              data: {'claimId': claimId},
+              timestamp: DateTime.now(),
+            );
+            _showNotificationToast(notification);
+          } catch (e) {}
 
-              _handleTaskReopened(data);
-            }
-          });
+          _handleTaskReopened(data);
+        }
+      });
 
-          _socket?.on('notification:received', (data) {
-            if (mounted) _handleBackendNotification(data);
-          });
+      _socket?.on('notification:received', (data) {
+        if (mounted) _handleBackendNotification(data);
+      });
 
-          _socket?.on('task:assigned', (data) {
-            if (mounted) {
-              _handleTaskAssigned(data);
-            } else {
-              }
-          });
+      _socket?.on('task:assigned', (data) {
+        if (mounted) {
+          _handleTaskAssigned(data);
+        } else {}
+      });
 
       _socket?.on('connect_error', (err) {
         _socketConnected = false;
@@ -137,8 +137,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       // Verbose: log any event received (useful for debugging connectivity/payloads)
       try {
         _socket?.onAny((event, data) {
-          try {
-            } catch (_) {}
+          try {} catch (_) {}
         });
       } catch (_) {}
 
@@ -162,17 +161,21 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
           final latest = await TechnicianService.getAssignedTasks();
           for (final old in _cachedTasks) {
             if (old.status.toLowerCase() != 'rejected') continue;
-            final matches = latest.where((t) => t.id == old.id || t.claimId == old.claimId).toList();
+            final matches = latest
+                .where((t) => t.id == old.id || t.claimId == old.claimId)
+                .toList();
             if (matches.isEmpty) continue;
             final match = matches.first;
-            if (match.id.isEmpty || match.status.toLowerCase() == 'rejected') continue;
+            if (match.id.isEmpty || match.status.toLowerCase() == 'rejected')
+              continue;
 
             // Show immediate toast
             final notification = NotificationMessage(
               id: 'reopen_poll_${DateTime.now().millisecondsSinceEpoch}',
               type: 'task_reopened',
               title: 'Task Reopened',
-              message: '${match.title} (#${match.claimId}) was re-opened by admin',
+              message:
+                  '${match.title} (#${match.claimId}) was re-opened by admin',
               data: {'claimId': match.claimId},
               timestamp: DateTime.now(),
             );
@@ -181,7 +184,9 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
             // Update cache and pages
             if (mounted) {
               setState(() {
-                final idx = _cachedTasks.indexWhere((t) => t.id == match.id || t.claimId == match.claimId);
+                final idx = _cachedTasks.indexWhere(
+                  (t) => t.id == match.id || t.claimId == match.claimId,
+                );
                 if (idx != -1) {
                   _cachedTasks[idx] = match;
                   _tasksFuture = Future.value(_cachedTasks);
@@ -207,17 +212,21 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
 
       final claimId = reopenData['claimId']?.toString();
       final newStatus = reopenData['newStatus'] != null
-        ? reopenData['newStatus'].toString().toLowerCase()
-        : null;
+          ? reopenData['newStatus'].toString().toLowerCase()
+          : null;
       final oldStatus = reopenData['oldStatus'] != null
-        ? reopenData['oldStatus'].toString().toLowerCase()
-        : null;
+          ? reopenData['oldStatus'].toString().toLowerCase()
+          : null;
 
       // Only process if status changed to 'on-progress' (normal re-open scenario)
-      if (newStatus == 'on-progress' && oldStatus == 'rejected' && claimId != null) {
+      if (newStatus == 'on-progress' &&
+          oldStatus == 'rejected' &&
+          claimId != null) {
         // Update cached task with new status
         if (_cachedTasks.isNotEmpty) {
-          final idx = _cachedTasks.indexWhere((t) => t.id == claimId || t.claimId == claimId);
+          final idx = _cachedTasks.indexWhere(
+            (t) => t.id == claimId || t.claimId == claimId,
+          );
           if (idx != -1) {
             final oldTask = _cachedTasks[idx];
             final updatedTask = TechnicianTask(
@@ -278,7 +287,8 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       final type = notifData['type']?.toString() ?? 'general';
       final title = notifData['title']?.toString() ?? 'Notification';
       final message = notifData['message']?.toString() ?? '';
-      final notificationPayload = notifData['data'] as Map<String, dynamic>? ?? {};
+      final notificationPayload =
+          notifData['data'] as Map<String, dynamic>? ?? {};
 
       // Create notification object
       final notification = NotificationMessage(
@@ -309,7 +319,10 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
         return;
       }
 
-      final taskId = taskData['id']?.toString() ?? taskData['claimId']?.toString() ?? 'unknown';
+      final taskId =
+          taskData['id']?.toString() ??
+          taskData['claimId']?.toString() ??
+          'unknown';
       final taskTitle = taskData['title']?.toString() ?? 'New Task';
       final taskDescription = taskData['description']?.toString() ?? '';
       final location = taskData['location']?.toString() ?? '';
@@ -319,16 +332,20 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
         id: 'task_assigned_$taskId',
         type: 'task_assigned',
         title: 'New Task Assigned',
-        message: '📋 $taskTitle is assigned to you${location.isNotEmpty ? ' - $location' : ''}',
-        data: {'taskId': taskId, 'title': taskTitle, 'description': taskDescription},
+        message:
+            '📋 $taskTitle is assigned to you${location.isNotEmpty ? ' - $location' : ''}',
+        data: {
+          'taskId': taskId,
+          'title': taskTitle,
+          'description': taskDescription,
+        },
         timestamp: DateTime.now(),
       );
 
       // Show toast immediately
       if (mounted) {
         _showNotificationToast(notification);
-        } else {
-        }
+      } else {}
 
       // Emit through NotificationService for badge updates
       _notificationService.emitNotification(notification);
@@ -337,13 +354,12 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       if (mounted) {
         _loadTasks();
       }
-    } catch (e) {
-      }
+    } catch (e) {}
   }
 
   void _showReopenNotification(String claimId) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -394,7 +410,11 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
   bool _canAcceptTask(String status) {
     final s = status.toLowerCase();
     // Treat any assigned/pending/new/unassigned status as eligible for accept
-    if (s.contains('assign') || s.contains('pending') || s == 'new' || s.contains('unassigned')) return true;
+    if (s.contains('assign') ||
+        s.contains('pending') ||
+        s == 'new' ||
+        s.contains('unassigned'))
+      return true;
     return false;
   }
 
@@ -402,7 +422,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
     try {
       // Start WebSocket connection in background without blocking
       _notificationService.connect();
-      
+
       // Listen to notifications
       _notificationSubscription = _notificationService.notifications.listen(
         (notification) {
@@ -428,7 +448,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
     // Determine color and icon based on notification type
     Color backgroundColor = Colors.green[600]!;
     IconData? icon;
-    
+
     switch (notification.type) {
       case 'task_reopened':
         backgroundColor = Colors.green[600]!;
@@ -473,10 +493,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
                 const SizedBox(height: 4),
                 Text(
                   notification.message,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.white),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -486,17 +503,22 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
         ],
       ),
       backgroundColor: backgroundColor,
-      duration: notification.type == 'task_reopened' 
-        ? const Duration(seconds: 6)
-        : notification.type == 'task_assigned'
-        ? const Duration(seconds: 8)  // Longer for task assignment
-        : const Duration(seconds: 5),
+      duration: notification.type == 'task_reopened'
+          ? const Duration(seconds: 6)
+          : notification.type == 'task_assigned'
+          ? const Duration(seconds: 8) // Longer for task assignment
+          : const Duration(seconds: 5),
       behavior: SnackBarBehavior.floating,
       // Position above bottom nav: large bottom margin
       margin: notification.type == 'task_assigned'
-        ? const EdgeInsets.fromLTRB(16, 16, 16, 90)  // 90px from bottom to clear nav bar
-        : const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      elevation: 8.0,  // Higher elevation to ensure visibility
+          ? const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              90,
+            ) // 90px from bottom to clear nav bar
+          : const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      elevation: 8.0, // Higher elevation to ensure visibility
       action: SnackBarAction(
         label: 'View',
         textColor: Colors.white,
@@ -542,7 +564,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       }
     }();
   }
- 
+
   @override
   void dispose() {
     try {
@@ -587,7 +609,9 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
           ),
         ],
       ),
-      body: _pages.isNotEmpty ? _pages[_selectedIndex] : const SizedBox.shrink(),
+      body: _pages.isNotEmpty
+          ? _pages[_selectedIndex]
+          : const SizedBox.shrink(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -696,7 +720,10 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
           sliver: SliverToBoxAdapter(
             child: RepaintBoundary(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 28,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -761,12 +788,15 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                                   height: 1.5,
                                 ),
                               ),
-                              if (stats.pendingTasks > 0) ...[const SizedBox(height: 12),
+                              if (stats.pendingTasks > 0) ...[
+                                const SizedBox(height: 12),
                                 Row(
                                   children: [
                                     Icon(
                                       Icons.priority_high,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       size: 18,
                                     ),
                                     const SizedBox(width: 8),
@@ -774,7 +804,9 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                                       '${stats.pendingTasks} require your attention',
                                       style: TextStyle(
                                         fontSize: 15,
-                                        color: Colors.white.withValues(alpha: 0.9),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -920,12 +952,19 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0070BA).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF0070BA,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(0xFF0070BA).withValues(alpha: 0.2),
+                              color: const Color(
+                                0xFF0070BA,
+                              ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Text(
@@ -1006,9 +1045,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
         // Bottom padding
         SliverPadding(
           padding: const EdgeInsets.only(bottom: 32.0),
-          sliver: SliverToBoxAdapter(
-            child: Container(),
-          ),
+          sliver: SliverToBoxAdapter(child: Container()),
         ),
       ],
     );
@@ -1044,7 +1081,9 @@ class _StatCardState extends State<_StatCard> {
         cursor: SystemMouseCursors.click,
         child: Card(
           elevation: _isHovered ? 12 : 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             decoration: BoxDecoration(
@@ -1080,11 +1119,7 @@ class _StatCardState extends State<_StatCard> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    widget.icon,
-                    size: 32,
-                    color: widget.color,
-                  ),
+                  child: Icon(widget.icon, size: 32, color: widget.color),
                 ),
                 const SizedBox(height: 16),
                 // Count - Primary Text
@@ -1123,11 +1158,7 @@ class _TaskCard extends StatefulWidget {
   final TechnicianTask task;
   final Color statusColor;
 
-  const _TaskCard({
-    super.key,
-    required this.task,
-    required this.statusColor,
-  });
+  const _TaskCard({super.key, required this.task, required this.statusColor});
 
   @override
   State<_TaskCard> createState() => _TaskCardState();
@@ -1153,8 +1184,10 @@ class _TaskCardState extends State<_TaskCard>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _expandAnimation =
-        Tween<double>(begin: 0, end: 1).animate(_animationController);
+    _expandAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(_animationController);
   }
 
   bool _isAcceptableStatus(String status) {
@@ -1183,10 +1216,7 @@ class _TaskCardState extends State<_TaskCard>
   void _openMap(double latitude, double longitude) {
     showDialog(
       context: context,
-      builder: (context) => MapModal(
-        latitude: latitude,
-        longitude: longitude,
-      ),
+      builder: (context) => MapModal(latitude: latitude, longitude: longitude),
     );
   }
 
@@ -1242,7 +1272,7 @@ class _TaskCardState extends State<_TaskCard>
             margin: const EdgeInsets.all(16),
           ),
         );
-        
+
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             setState(() {});
@@ -1302,10 +1332,7 @@ class _TaskCardState extends State<_TaskCard>
                         fontSize: 14,
                       ),
                     ),
-                    Text(
-                      e.toString(),
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    Text(e.toString(), style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
@@ -1344,8 +1371,9 @@ class _TaskCardState extends State<_TaskCard>
         builder: (context, child) {
           return Card(
             elevation: 0,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -1536,7 +1564,9 @@ class _TaskCardState extends State<_TaskCard>
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withValues(alpha: 0.1),
-                                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                                  border: Border.all(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Column(
@@ -1552,7 +1582,8 @@ class _TaskCardState extends State<_TaskCard>
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               const Text(
                                                 '🔒 Task Blocked',
@@ -1567,7 +1598,9 @@ class _TaskCardState extends State<_TaskCard>
                                                 'This task has been rejected. You need admin approval to continue working on it.',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.red.withValues(alpha: 0.8),
+                                                  color: Colors.red.withValues(
+                                                    alpha: 0.8,
+                                                  ),
                                                   height: 1.4,
                                                 ),
                                               ),
@@ -1581,26 +1614,46 @@ class _TaskCardState extends State<_TaskCard>
                                       children: [
                                         Expanded(
                                           child: ElevatedButton.icon(
-                                            onPressed: _isRequestingReopen ? null : _requestTaskReopen,
+                                            onPressed: _isRequestingReopen
+                                                ? null
+                                                : _requestTaskReopen,
                                             icon: _isRequestingReopen
                                                 ? const SizedBox(
                                                     width: 16,
                                                     height: 16,
                                                     child: CircularProgressIndicator(
                                                       strokeWidth: 2,
-                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
                                                     ),
                                                   )
-                                                : const Icon(Icons.lock_open, size: 18),
+                                                : const Icon(
+                                                    Icons.lock_open,
+                                                    size: 18,
+                                                  ),
                                             label: Text(
-                                              _isRequestingReopen ? 'Sending Request...' : 'Request Re-open',
-                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                              _isRequestingReopen
+                                                  ? 'Sending Request...'
+                                                  : 'Request Re-open',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.orange,
                                               foregroundColor: Colors.white,
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 10,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
                                               elevation: 2,
                                             ),
                                           ),
@@ -1642,19 +1695,29 @@ class _TaskCardState extends State<_TaskCard>
                                 children: [
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: _isAccepting ? null : _acceptTask,
+                                      onPressed: _isAccepting
+                                          ? null
+                                          : _acceptTask,
                                       icon: _isAccepting
                                           ? const SizedBox(
                                               width: 18,
                                               height: 18,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
                                               ),
                                             )
-                                          : const Icon(Icons.play_arrow, size: 18),
+                                          : const Icon(
+                                              Icons.play_arrow,
+                                              size: 18,
+                                            ),
                                       label: Text(
-                                        _isAccepting ? 'Accepting...' : 'Accept Task',
+                                        _isAccepting
+                                            ? 'Accepting...'
+                                            : 'Accept Task',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -1663,9 +1726,13 @@ class _TaskCardState extends State<_TaskCard>
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.teal,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1677,19 +1744,29 @@ class _TaskCardState extends State<_TaskCard>
                                 children: [
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: _isSavingTask ? null : _completeTask,
+                                      onPressed: _isSavingTask
+                                          ? null
+                                          : _completeTask,
                                       icon: _isSavingTask
                                           ? const SizedBox(
                                               width: 18,
                                               height: 18,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
                                               ),
                                             )
-                                          : const Icon(Icons.done_all, size: 18),
+                                          : const Icon(
+                                              Icons.done_all,
+                                              size: 18,
+                                            ),
                                       label: Text(
-                                        _isSavingTask ? 'Saving...' : 'Save Task',
+                                        _isSavingTask
+                                            ? 'Saving...'
+                                            : 'Save Task',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -1698,9 +1775,13 @@ class _TaskCardState extends State<_TaskCard>
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: widget.statusColor,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1735,9 +1816,7 @@ class _TaskCardState extends State<_TaskCard>
         backgroundColor: widget.statusColor,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: isUpdating
           ? const SizedBox(
@@ -1892,11 +1971,7 @@ class _TaskCardState extends State<_TaskCard>
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                    child: Icon(Icons.close, color: Colors.white, size: 24),
                   ),
                 ),
               ),
@@ -2019,10 +2094,7 @@ class _TaskCardState extends State<_TaskCard>
                           fontSize: 14,
                         ),
                       ),
-                      Text(
-                        e.toString(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                      Text(e.toString(), style: const TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
@@ -2056,7 +2128,8 @@ class _TaskCardState extends State<_TaskCard>
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Location permission denied')),
         );
@@ -2064,17 +2137,26 @@ class _TaskCardState extends State<_TaskCard>
       }
 
       // Get current position
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
       final lat = pos.latitude;
       final lon = pos.longitude;
 
       // Log and show immediate feedback
       // Update backend status to 'on-progress' when technician accepts
-      final success = await TechnicianService.updateTaskStatus(widget.task.claimId, 'on-progress');
+      final success = await TechnicianService.updateTaskStatus(
+        widget.task.claimId,
+        'on-progress',
+      );
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Accepted task — starting now. Current location: ${lat.toStringAsFixed(6)}, ${lon.toStringAsFixed(6)}')),
+          SnackBar(
+            content: Text(
+              'Accepted task — starting now. Current location: ${lat.toStringAsFixed(6)}, ${lon.toStringAsFixed(6)}',
+            ),
+          ),
         );
 
         // Update local status
@@ -2082,14 +2164,14 @@ class _TaskCardState extends State<_TaskCard>
           _localStatus = 'on-progress';
         });
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to accept task')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to accept task')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error getting location: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error getting location: $e')));
     } finally {
       if (mounted) setState(() => _isAccepting = false);
     }
@@ -2197,10 +2279,7 @@ class _TaskCardState extends State<_TaskCard>
                           fontSize: 14,
                         ),
                       ),
-                      Text(
-                        e.toString(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                      Text(e.toString(), style: const TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
@@ -2228,11 +2307,7 @@ class MapModal extends StatefulWidget {
   final double latitude;
   final double longitude;
 
-  const MapModal({
-    required this.latitude,
-    required this.longitude,
-    super.key,
-  });
+  const MapModal({required this.latitude, required this.longitude, super.key});
 
   @override
   State<MapModal> createState() => _MapModalState();
@@ -2302,10 +2377,7 @@ class _MapModalState extends State<MapModal> {
                     onTap: () => Navigator.pop(context),
                     child: const Text(
                       '✕',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 28),
                     ),
                   ),
                 ],
@@ -2350,7 +2422,8 @@ class _MapModalState extends State<MapModal> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.trip.claim.app',
                         tileProvider: NetworkTileProvider(),
                       ),
@@ -2381,7 +2454,9 @@ class _MapModalState extends State<MapModal> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF667eea).withValues(alpha: 0.4),
+                                        color: const Color(
+                                          0xFF667eea,
+                                        ).withValues(alpha: 0.4),
                                         blurRadius: 8,
                                         spreadRadius: 3,
                                       ),
@@ -2419,10 +2494,7 @@ class _MapModalState extends State<MapModal> {
                   ),
                   child: const Text(
                     'Close',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -2438,11 +2510,7 @@ class InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const InfoRow({
-    required this.label,
-    required this.value,
-    super.key,
-  });
+  const InfoRow({required this.label, required this.value, super.key});
 
   @override
   Widget build(BuildContext context) {
