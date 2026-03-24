@@ -21,8 +21,6 @@ class AdminWebSocketService {
       // Convert HTTP URL to WS URL
       String wsUrl = apiUrl.replaceFirst('http://', 'ws://').replaceFirst('https://', 'wss://');
       
-      print('🔗 [WEBSOCKET] Connecting to: $wsUrl');
-      
       // Create WebSocket connection
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _onStatusUpdated = onStatusUpdated;
@@ -38,26 +36,21 @@ class AdminWebSocketService {
         }
       }));
 
-      print('✅ [WEBSOCKET] Connected successfully');
-
       // Listen for messages
       _channel!.stream.listen(
         (message) {
           _handleMessage(message);
         },
         onError: (error) {
-          print('❌ [WEBSOCKET] Error: $error');
           _reconnect(apiUrl, onStatusUpdated, onNewClaim, onClaimsChanged);
         },
         onDone: () {
-          print('⚠️ [WEBSOCKET] Connection closed');
           _reconnect(apiUrl, onStatusUpdated, onNewClaim, onClaimsChanged);
         },
       );
 
       return true;
     } catch (e) {
-      print('❌ [WEBSOCKET] Connection failed: $e');
       return false;
     }
   }
@@ -73,36 +66,26 @@ class AdminWebSocketService {
       final eventName = data['event'] ?? data['type'] ?? '';
       final eventData = data['data'] ?? data;
 
-      print('📬 [WEBSOCKET] Received: $eventName');
-
       switch (eventName) {
         case 'claim:statusUpdated':
-          print('🔄 [REALTIME] Status update received:');
-          print('   Claim: ${data['claimId']}');
-          print('   Status: ${data['oldStatus']} → ${data['newStatus']}');
           _onStatusUpdated?.call(data);
           break;
 
         case 'claim:created':
-          print('✨ [REALTIME] New claim received: ${data['claim']['id']}');
           _onNewClaim?.call(data['claim']);
           break;
 
         case 'claims:changed':
-          print('📊 [REALTIME] Claims changed event received');
           _onClaimsChanged?.call(data['claims']);
           break;
 
         case 'admin:connected':
-          print('✅ [WEBSOCKET] Admin connection confirmed');
           break;
 
         default:
-          print('❓ [WEBSOCKET] Unknown event: $eventName');
-      }
+          }
     } catch (e) {
-      print('❌ [WEBSOCKET] Failed to parse message: $e');
-    }
+      }
   }
 
   /// Reconnect with exponential backoff
@@ -112,12 +95,10 @@ class AdminWebSocketService {
     Function? onNewClaim,
     Function? onClaimsChanged,
   ) async {
-    print('⏳ [WEBSOCKET] Attempting to reconnect in 3 seconds...');
     await Future.delayed(Duration(seconds: 3));
     
     final success = await connect(apiUrl, onStatusUpdated, onNewClaim: onNewClaim, onClaimsChanged: onClaimsChanged);
     if (!success) {
-      print('⚠️ [WEBSOCKET] Reconnection failed, will retry...');
       _reconnect(apiUrl, onStatusUpdated, onNewClaim, onClaimsChanged);
     }
   }
@@ -127,8 +108,7 @@ class AdminWebSocketService {
     if (_channel != null) {
       await _channel!.sink.close(status.goingAway);
       _channel = null;
-      print('🔌 [WEBSOCKET] Disconnected');
-    }
+      }
   }
 
   /// Check if connected

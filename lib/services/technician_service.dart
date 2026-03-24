@@ -35,9 +35,7 @@ class TechnicianTask {
   });
 
   factory TechnicianTask.fromJson(Map<String, dynamic> json) {
-    print('? Task.fromJson - Has images: ${json.containsKey('images')}, Value: ${json['images']}');
-    print('?? Task coordinates - Latitude: ${json['latitude']}, Longitude: ${json['longitude']}');
-    print('?? Full task JSON keys: ${json.keys.toList()}');
+    print('Parsing TechnicianTask: ID=${json['id']}, Value: ${json['images']}');
     return TechnicianTask(
       id: json['id']?.toString() ?? 'N/A',
       claimId: json['claimId']?.toString() ?? json['id']?.toString() ?? 'N/A',
@@ -59,8 +57,7 @@ class TechnicianTask {
   static List<String> _extractImages(Map<String, dynamic> json) {
     List<String> imagesList = [];
     dynamic images = json['images'];
-    print('?? _extractImages - Raw JSON keys: ${json.keys.toList()}');
-    print('?? _extractImages called, raw images: $images (type: ${images.runtimeType})');
+    print('Extracting images from: $images');
     if (images is List) {
       for (var image in images) {
         if (image is String) {
@@ -73,7 +70,6 @@ class TechnicianTask {
         }
       }
     }
-    print('?? _extractImages result: $imagesList');
     return imagesList;
   }
 
@@ -150,36 +146,16 @@ class TechnicianTask {
     return null;
   }
 
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      try {
-        return double.parse(value);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
   /// Extract latitude from nested location object
   static double _extractLatitude(Map<String, dynamic> json) {
     try {
-      print('🔍 _extractLatitude: Extracting from json');
-      print('🔍 _extractLatitude: json.keys = ${json.keys.toList()}');
-      print('🔍 _extractLatitude: json["location"] = ${json['location']}');
-      
+      print('Extracting latitude from: ${json['location']}');
       // Try nested location object first
       if (json['location'] != null && json['location'] is Map) {
         final location = json['location'] as Map<String, dynamic>;
-        print('🔍 _extractLatitude: location.keys = ${location.keys.toList()}');
-        print('🔍 _extractLatitude: location["latitude"] = ${location['latitude']}');
-        
+        print('Location object: $location');
         if (location['latitude'] != null) {
           final lat = location['latitude'];
-          print('✅ _extractLatitude: Found nested latitude = $lat');
           if (lat is int) return lat.toDouble();
           if (lat is double) return lat;
         }
@@ -187,15 +163,12 @@ class TechnicianTask {
       // Fallback to root level
       if (json['latitude'] != null) {
         final lat = json['latitude'];
-        print('✅ _extractLatitude: Found root latitude = $lat');
         if (lat is int) return lat.toDouble();
         if (lat is double) return lat;
       }
       // Return default
-      print('⚠️ _extractLatitude: Using default 10.6899');
       return 10.6899;
     } catch (e) {
-      print('❌ _extractLatitude Exception: $e');
       return 10.6899;
     }
   }
@@ -203,18 +176,12 @@ class TechnicianTask {
   /// Extract longitude from nested location object
   static double _extractLongitude(Map<String, dynamic> json) {
     try {
-      print('🔍 _extractLongitude: Extracting from json');
-      print('🔍 _extractLongitude: json["location"] = ${json['location']}');
-      
       // Try nested location object first
       if (json['location'] != null && json['location'] is Map) {
         final location = json['location'] as Map<String, dynamic>;
-        print('🔍 _extractLongitude: location.keys = ${location.keys.toList()}');
-        print('🔍 _extractLongitude: location["longitude"] = ${location['longitude']}');
-        
+        print('Location object for longitude: $location');
         if (location['longitude'] != null) {
           final lng = location['longitude'];
-          print('✅ _extractLongitude: Found nested longitude = $lng');
           if (lng is int) return lng.toDouble();
           if (lng is double) return lng;
         }
@@ -222,15 +189,12 @@ class TechnicianTask {
       // Fallback to root level
       if (json['longitude'] != null) {
         final lng = json['longitude'];
-        print('✅ _extractLongitude: Found root longitude = $lng');
         if (lng is int) return lng.toDouble();
         if (lng is double) return lng;
       }
       // Return default
-      print('⚠️ _extractLongitude: Using default 77.1025');
       return 77.1025;
     } catch (e) {
-      print('❌ _extractLongitude Exception: $e');
       return 77.1025;
     }
   }
@@ -280,8 +244,7 @@ class TechnicianService {
   static void setAuthToken(String token) {
     _bearerToken = token;
     ApiService.setAuthToken(token);
-    print('✅ TechnicianService: Auth token set');
-  }
+    }
 
   /// Check if user is authenticated
   static bool isAuthenticated() => _bearerToken != null && _bearerToken!.isNotEmpty;
@@ -290,52 +253,44 @@ class TechnicianService {
   static Future<TechnicianStats> getTechnicianStats() async {
     try {
       if (!isAuthenticated()) {
-        print('❌ getTechnicianStats: Not authenticated - token is null or empty');
-        print('❌ Please ensure TechnicianService.setAuthToken() was called after login');
+        print('getTechnicianStats was called after login');
         return TechnicianStats.getDefault();
       }
 
       final url = '${ApiService.baseUrl}/technician/stats';
-      print('\n📡 getTechnicianStats: Fetching from $url');
-      print('🔐 Using token: ${_bearerToken?.substring(0, 20)}...');
+      print('Fetching technician stats from: $url');
 
-      try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Authorization': 'Bearer $_bearerToken',
-            'Content-Type': 'application/json',
-          },
-        ).timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $_bearerToken',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
 
-        print('📊 Response Status: ${response.statusCode}');
-
-        if (response.statusCode == 200) {
-          try {
-            final json = jsonDecode(response.body);
-            print('✅ getTechnicianStats: Success');
-            return TechnicianStats.fromJson(json);
-          } catch (parseError) {
-            print('❌ Error parsing stats response: $parseError');
-            return TechnicianStats.getDefault();
-          }
-        } else if (response.statusCode == 404) {
-          print('⚠️ /technician/stats endpoint not found (404)');
-          print('   Attempting fallback: Computing stats from claims...');
-          return _computeStatsFromClaims();
-        } else if (response.statusCode == 401) {
-          print('❌ getTechnicianStats: Unauthorized (401)');
+      if (response.statusCode == 200) {
+        try {
+          final json = jsonDecode(response.body);
+          return TechnicianStats.fromJson(json);
+        } catch (parseError) {
+          print('Error parsing technician stats: $parseError');
           return TechnicianStats.getDefault();
-        } else {
-          print('❌ getTechnicianStats: HTTP ${response.statusCode}');
-          return _computeStatsFromClaims();
         }
-      } on TimeoutException {
-        print('❌ getTechnicianStats: Request timeout');
+      } else if (response.statusCode == 404) {
+        print('Technician stats endpoint not found, computing from claims');
+        return _computeStatsFromClaims();
+      } else if (response.statusCode == 401) {
+        print('Unauthorized access to technician stats');
+        return TechnicianStats.getDefault();
+      } else {
+        print('Failed to fetch technician stats: ${response.statusCode}');
         return _computeStatsFromClaims();
       }
+    } on TimeoutException {
+      print('Timeout fetching technician stats');
+      return _computeStatsFromClaims();
     } catch (e) {
-      print('❌ getTechnicianStats Exception: $e');
+      print('Error fetching technician stats: $e');
       return TechnicianStats.getDefault();
     }
   }
@@ -343,13 +298,10 @@ class TechnicianService {
   /// Compute stats by analyzing tasks
   static Future<TechnicianStats> _computeStatsFromClaims() async {
     try {
-      print('   📊 Computing stats from available tasks...');
-      
       // Get tasks using the same fallback method
       final tasks = await getAssignedTasks();
       
       if (tasks.isEmpty) {
-        print('   ⚠️ No tasks found - returning default stats');
         return TechnicianStats.getDefault();
       }
       
@@ -362,8 +314,11 @@ class TechnicianService {
         final status = task.status.toLowerCase();
         if (status == 'pending') {
           pending++;
-        } else if (status == 'on-progress' || status == 'on progress') inProgress++;
-        else if (status == 'completed' || status == 'solved') completed++;
+        } else if (status == 'on-progress' || status == 'on progress') {
+          inProgress++;
+        } else if (status == 'completed' || status == 'solved') {
+          completed++;
+        }
       }
       
       final stats = TechnicianStats(
@@ -374,10 +329,8 @@ class TechnicianService {
         totalTasksToday: tasks.length,
       );
       
-      print('   ✅ Stats computed: ${stats.pendingTasks} pending, ${stats.inProgressTasks} in progress, ${stats.completedTasks} completed');
       return stats;
     } catch (e) {
-      print('   ❌ Error computing stats: $e');
       return TechnicianStats.getDefault();
     }
   }
@@ -387,14 +340,12 @@ class TechnicianService {
   static Future<List<TechnicianTask>> getAssignedTasks() async {
     try {
       if (!isAuthenticated()) {
-        print('❌ getAssignedTasks: Not authenticated - token is null or empty');
-        print('❌ Please ensure TechnicianService.setAuthToken() was called after login');
+        print('getAssignedTasks was called after login');
         return [];
       }
 
       final url = '${ApiService.baseUrl}/technician/tasks';
-      print('\n📡 getAssignedTasks: Attempting to fetch from $url');
-      print('🔐 Using token: ${_bearerToken?.substring(0, 20)}...');
+      print('Fetching tasks from: $url');
 
       try {
         final response = await http.get(
@@ -405,12 +356,10 @@ class TechnicianService {
           },
         ).timeout(const Duration(seconds: 15));
 
-        print('📊 Response Status: ${response.statusCode}');
-
         if (response.statusCode == 200) {
           try {
             final json = jsonDecode(response.body);
-            
+
             // Handle different response formats
             List taskList = [];
             if (json is List) {
@@ -420,33 +369,31 @@ class TechnicianService {
             } else if (json is Map && json.containsKey('tasks')) {
               taskList = json['tasks'] is List ? json['tasks'] : [];
             }
-            
+
             final tasks = taskList
                 .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
                 .toList();
-            print('✅ getAssignedTasks: Success - ${tasks.length} tasks loaded');
             return tasks;
           } catch (parseError) {
-            print('❌ Error parsing response JSON: $parseError');
+            print('Error parsing tasks: $parseError');
             return [];
           }
         } else if (response.statusCode == 404) {
-          print('⚠️ /technician/tasks endpoint not found (404)');
-          print('   Attempting fallback: Using /claims endpoint instead...');
+          print('Technician tasks endpoint not found, trying claims endpoint');
           return _getTasksFromClaimsEndpoint();
         } else if (response.statusCode == 401) {
-          print('❌ getAssignedTasks: Unauthorized (401) - Token expired');
+          print('Unauthorized - Token expired');
           return [];
         } else {
-          print('❌ getAssignedTasks: HTTP ${response.statusCode}');
+          print('Failed to fetch tasks, trying claims endpoint');
           return _getTasksFromClaimsEndpoint();
         }
       } on TimeoutException {
-        print('❌ getAssignedTasks: Request timeout');
+        print('Timeout fetching tasks, trying claims endpoint');
         return _getTasksFromClaimsEndpoint();
       }
     } catch (e) {
-      print('❌ getAssignedTasks Exception: $e');
+      print('Error in getAssignedTasks: $e');
       return [];
     }
   }
@@ -459,8 +406,6 @@ class TechnicianService {
       }
 
       final url = '${ApiService.baseUrl}/claims/my-claims';
-      print('   📡 Trying alternative endpoint: $url');
-
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -485,20 +430,17 @@ class TechnicianService {
           final tasks = taskList
               .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
               .toList();
-          print('   ✅ Alternative endpoint success - ${tasks.length} tasks loaded');
           return tasks;
         } catch (e) {
-          print('   ❌ Error parsing alternative endpoint: $e');
           return [];
         }
       } else if (response.statusCode == 404) {
-        print('   ⚠️ Alternative endpoint also not found (404)');
-        print('   📡 Trying: ${ApiService.baseUrl}/claims');
+        print('My claims endpoint not found, trying all claims endpoint');
         return _getTasksFromAllClaimsEndpoint();
       }
       return [];
     } catch (e) {
-      print('   ❌ Alternative endpoint failed: $e');
+      print('Error in _getTasksFromClaimsEndpoint: $e');
       return _getTasksFromAllClaimsEndpoint();
     }
   }
@@ -511,8 +453,6 @@ class TechnicianService {
       }
 
       final url = '${ApiService.baseUrl}/claims';
-      print('   📡 Trying generic endpoint: $url');
-
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -543,19 +483,14 @@ class TechnicianService {
               .map((item) => TechnicianTask.fromJson(item as Map<String, dynamic>))
               .toList();
           
-          print('   ✅ Generic endpoint success - ${tasks.length} active tasks loaded');
           return tasks;
         } catch (e) {
-          print('   ❌ Error parsing generic endpoint: $e');
           return [];
         }
       }
       
-      print('   ⚠️ No endpoints available - returning empty list');
-      print('   Please ensure backend has one of: /technician/tasks, /claims/my-claims, or /claims');
       return [];
     } catch (e) {
-      print('   ❌ Generic endpoint failed: $e');
       return [];
     }
   }
@@ -564,20 +499,10 @@ class TechnicianService {
   static Future<bool> updateTaskStatus(String claimId, String newStatus) async {
     try {
       if (!isAuthenticated()) {
-        print('❌ updateTaskStatus: Not authenticated');
         return false;
       }
 
-      print('📤 updateTaskStatus - Sending request:');
-      print('   URL: ${ApiService.baseUrl}/claims/$claimId/status');
-      print('   Method: PUT');
-      print('   Claim ID: $claimId');
-      print('   New Status: $newStatus');
-      print('   Bearer Token: $_bearerToken');
-
       final requestBody = jsonEncode({'status': newStatus});
-      print('   Request Body: $requestBody');
-
       final response = await http.put(
         Uri.parse('${ApiService.baseUrl}/claims/$claimId/status'),
         headers: {
@@ -587,21 +512,12 @@ class TechnicianService {
         body: requestBody,
       ).timeout(const Duration(seconds: 10));
 
-      print('📥 updateTaskStatus - Response received:');
-      print('   Status Code: ${response.statusCode}');
-      print('   Headers: ${response.headers}');
-      print('   Body: ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 204) {
-        print('✅ updateTaskStatus: Status updated to $newStatus for $claimId');
         return true;
       } else {
-        print('❌ updateTaskStatus: HTTP ${response.statusCode}');
-        print('   Error Details: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('❌ updateTaskStatus Exception: $e');
       return false;
     }
   }
@@ -610,13 +526,10 @@ class TechnicianService {
   static Future<bool> requestReopen(String claimId) async {
     try {
       if (!isAuthenticated()) {
-        print('❌ requestReopen: Not authenticated');
         return false;
       }
 
       final url = '${ApiService.baseUrl}/claims/$claimId/request-reopen';
-      print('📤 requestReopen - Sending POST to $url');
-
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -625,15 +538,11 @@ class TechnicianService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📥 requestReopen - Response: ${response.statusCode}');
       if (response.statusCode == 200) {
-        print('✅ requestReopen: Request submitted');
         return true;
       }
-      print('❌ requestReopen: HTTP ${response.statusCode}');
       return false;
     } catch (e) {
-      print('❌ requestReopen Exception: $e');
       return false;
     }
   }
@@ -642,7 +551,6 @@ class TechnicianService {
   static Future<bool> uploadTaskPhoto(String claimId, String photoPath) async {
     try {
       if (!isAuthenticated()) {
-        print('❌ uploadTaskPhoto: Not authenticated');
         return false;
       }
 
@@ -657,44 +565,11 @@ class TechnicianService {
       final response = await request.send().timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
-        print('✅ uploadTaskPhoto: Photo uploaded for $claimId');
         return true;
       } else {
-        print('❌ uploadTaskPhoto: HTTP ${response.statusCode}');
         return false;
       }
     } catch (e) {
-      print('❌ uploadTaskPhoto Exception: $e');
-      return false;
-    }
-  }
-
-  /// Send an update message for a task
-  static Future<bool> sendTaskUpdate(String claimId, String message) async {
-    try {
-      if (!isAuthenticated()) {
-        print('❌ sendTaskUpdate: Not authenticated');
-        return false;
-      }
-
-      final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/claims/$claimId/update'),
-        headers: {
-          'Authorization': 'Bearer $_bearerToken',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'message': message}),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        print('✅ sendTaskUpdate: Update sent for $claimId');
-        return true;
-      } else {
-        print('❌ sendTaskUpdate: HTTP ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      print('❌ sendTaskUpdate Exception: $e');
       return false;
     }
   }

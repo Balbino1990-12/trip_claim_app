@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../trip_claim/trip_claim_page.dart';
-import '../new_connection/new_connection_page.dart';
 import '../history/trip_claim_history_page.dart';
 import '../login/login_page.dart';
 import '../../services/local_storage_service.dart';
@@ -59,7 +58,6 @@ class _HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<_HomeContent> {
-  final int _currentCardIndex = 0;
   String _meterNumber = 'Loading...';
   String _phoneNumber = 'Loading...';
 
@@ -169,7 +167,7 @@ class _HomeContentState extends State<_HomeContent> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ClipRRect(
@@ -190,7 +188,7 @@ class _HomeContentState extends State<_HomeContent> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -220,7 +218,7 @@ class _HomeContentState extends State<_HomeContent> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -249,7 +247,7 @@ class _HomeContentState extends State<_HomeContent> {
                             'Meter Number',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -279,7 +277,7 @@ class _HomeContentState extends State<_HomeContent> {
                             'Phone Number',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -309,7 +307,7 @@ class _HomeContentState extends State<_HomeContent> {
                             'Account Status',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -326,10 +324,10 @@ class _HomeContentState extends State<_HomeContent> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.2),
+                          color: Colors.green.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.green.withOpacity(0.5),
+                            color: Colors.green.withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Text(
@@ -492,7 +490,7 @@ class _HomeContentState extends State<_HomeContent> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -508,7 +506,7 @@ class _HomeContentState extends State<_HomeContent> {
                           'Lixius, Sejarah Feld',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -530,7 +528,7 @@ class _HomeContentState extends State<_HomeContent> {
                               'Card Services',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -564,12 +562,12 @@ class _HomeContentState extends State<_HomeContent> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.credit_card,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       size: 50,
                     ),
                   ),
@@ -614,7 +612,7 @@ class _ServiceButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2E6BA8).withOpacity(0.3),
+                      color: const Color(0xFF2E6BA8).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

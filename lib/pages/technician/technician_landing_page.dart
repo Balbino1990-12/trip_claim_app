@@ -58,7 +58,6 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       // Prefer explicit fixedSocketUrl, otherwise derived from ApiService, then localhost
       final url = fixedSocketUrl.isNotEmpty ? fixedSocketUrl : (derived.isNotEmpty ? derived : 'http://localhost:5000');
 
-      print('SOCKET: attempting connection to $url');
       _socket = IO.io(
         url,
         <String, dynamic>{
@@ -76,16 +75,13 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       _socket?.on('connect', (_) {
         _socketConnected = true;
         _fallbackTimer?.cancel();
-        print('SOCKET CONNECTED -> $url');
-      });
+        });
 
           _socket?.on('claim:reopened', (data) {
             try {
               final cid = (data is Map) ? data['claimId']?.toString() ?? 'unknown' : data.toString();
-              print('SOCKET CLAIM REOPENED RECEIVED: $cid');
-            } catch (e) {
-              print('SOCKET CLAIM REOPENED parse error: $e');
-            }
+              } catch (e) {
+              }
 
             if (mounted) {
               // Show toast and update cache
@@ -101,8 +97,7 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
                 );
                 _showNotificationToast(notification);
               } catch (e) {
-                print('TOAST build error: $e');
-              }
+                }
 
               _handleTaskReopened(data);
             }
@@ -113,34 +108,28 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
           });
 
           _socket?.on('task:assigned', (data) {
-            print('📡 SOCKET: task:assigned event received on client');
             if (mounted) {
               _handleTaskAssigned(data);
             } else {
-              print('⚠️ SOCKET: task:assigned received but widget not mounted');
-            }
+              }
           });
 
       _socket?.on('connect_error', (err) {
-        print('SOCKET CONNECT ERROR -> $err');
         _socketConnected = false;
         _startFallbackPolling();
       });
 
       _socket?.on('error', (err) {
-        print('SOCKET ERROR -> $err');
         _socketConnected = false;
         _startFallbackPolling();
       });
 
       _socket?.on('disconnect', (_) {
-        print('SOCKET DISCONNECTED');
         _socketConnected = false;
         _startFallbackPolling();
       });
 
       _socket?.on('reconnect', (attempt) {
-        print('SOCKET RECONNECTED after attempt: $attempt');
         _socketConnected = true;
         _fallbackTimer?.cancel();
       });
@@ -149,15 +138,13 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       try {
         _socket?.onAny((event, data) {
           try {
-            print('SOCKET EVENT: $event -> $data');
-          } catch (_) {}
+            } catch (_) {}
         });
       } catch (_) {}
 
       // Allow a short grace period for connection; if not connected, start fallback polling
       await Future.delayed(const Duration(seconds: 2));
       if (!_socketConnected) {
-        print('SOCKET not connected within grace period; starting fallback polling');
         _startFallbackPolling();
       }
     } catch (e) {
@@ -315,13 +302,10 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
 
   void _handleTaskAssigned(dynamic data) {
     try {
-      print('🔔 TASK ASSIGNED EVENT RECEIVED: $data');
-      
       Map<String, dynamic> taskData;
       if (data is Map) {
         taskData = data.cast<String, dynamic>();
       } else {
-        print('❌ Task data is not a Map: ${data.runtimeType}');
         return;
       }
 
@@ -329,8 +313,6 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
       final taskTitle = taskData['title']?.toString() ?? 'New Task';
       final taskDescription = taskData['description']?.toString() ?? '';
       final location = taskData['location']?.toString() ?? '';
-
-      print('✓ Task parsed: ID=$taskId, Title=$taskTitle, Location=$location');
 
       // Create notification
       final notification = NotificationMessage(
@@ -342,27 +324,21 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
         timestamp: DateTime.now(),
       );
 
-      print('🎯 Showing notification toast...');
-
       // Show toast immediately
       if (mounted) {
         _showNotificationToast(notification);
-        print('✅ Toast shown for task: $taskTitle');
-      } else {
-        print('⚠️ Widget not mounted, skipping toast');
-      }
+        } else {
+        }
 
       // Emit through NotificationService for badge updates
       _notificationService.emitNotification(notification);
 
       // Refresh tasks to show the new assignment
       if (mounted) {
-        print('🔄 Refreshing task list...');
         _loadTasks();
       }
     } catch (e) {
-      print('❌ Task assignment handler error: $e');
-    }
+      }
   }
 
   void _showReopenNotification(String claimId) {
@@ -525,7 +501,6 @@ class _TechnicianLandingPageState extends State<TechnicianLandingPage> {
         label: 'View',
         textColor: Colors.white,
         onPressed: () {
-          print('👁️ [TOAST] View button pressed');
           setState(() {
             _selectedIndex = 1;
           });
@@ -725,8 +700,8 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF0070BA).withOpacity(0.95),
-                      const Color(0xFF00C6FB).withOpacity(0.85),
+                      const Color(0xFF0070BA).withValues(alpha: 0.95),
+                      const Color(0xFF00C6FB).withValues(alpha: 0.85),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -735,12 +710,12 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0070BA).withOpacity(0.25),
+                      color: const Color(0xFF0070BA).withValues(alpha: 0.25),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
                     BoxShadow(
-                      color: const Color(0xFF0070BA).withOpacity(0.1),
+                      color: const Color(0xFF0070BA).withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -763,7 +738,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                       height: 3,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -780,7 +755,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                                 'You have ${stats.totalTasksToday} tasks assigned to you today',
                                 style: TextStyle(
                                   fontSize: 17,
-                                  color: Colors.white.withOpacity(0.95),
+                                  color: Colors.white.withValues(alpha: 0.95),
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 0.3,
                                   height: 1.5,
@@ -791,7 +766,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                                   children: [
                                     Icon(
                                       Icons.priority_high,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                       size: 18,
                                     ),
                                     const SizedBox(width: 8),
@@ -799,7 +774,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                                       '${stats.pendingTasks} require your attention',
                                       style: TextStyle(
                                         fontSize: 15,
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withValues(alpha: 0.9),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -813,7 +788,7 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                           'Loading your tasks...',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontWeight: FontWeight.w500,
                           ),
                         );
@@ -947,10 +922,10 @@ class _TechnicianDashboardState extends State<_TechnicianDashboard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0070BA).withOpacity(0.1),
+                            color: const Color(0xFF0070BA).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(0xFF0070BA).withOpacity(0.2),
+                              color: const Color(0xFF0070BA).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Text(
@@ -1076,14 +1051,14 @@ class _StatCardState extends State<_StatCard> {
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
                 colors: [
-                  widget.color.withOpacity(0.12),
-                  widget.color.withOpacity(0.04),
+                  widget.color.withValues(alpha: 0.12),
+                  widget.color.withValues(alpha: 0.04),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               border: Border.all(
-                color: widget.color.withOpacity(0.25),
+                color: widget.color.withValues(alpha: 0.25),
                 width: 1.5,
               ),
             ),
@@ -1095,11 +1070,11 @@ class _StatCardState extends State<_StatCard> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: widget.color.withOpacity(0.15),
+                    color: widget.color.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: widget.color.withOpacity(0.2),
+                        color: widget.color.withValues(alpha: 0.2),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -1199,7 +1174,6 @@ class _TaskCardState extends State<_TaskCard>
     super.didUpdateWidget(oldWidget);
     // Update local status when the task data changes (e.g., from Socket.IO refresh)
     if (oldWidget.task.status != widget.task.status) {
-      print('🔄 [CARD] Task status updated: ${oldWidget.task.status} → ${widget.task.status}');
       setState(() {
         _localStatus = widget.task.status.toLowerCase();
       });
@@ -1207,7 +1181,6 @@ class _TaskCardState extends State<_TaskCard>
   }
 
   void _openMap(double latitude, double longitude) {
-    print('??? Opening Leaflet Map: Lat=$latitude, Lng=$longitude');
     showDialog(
       context: context,
       builder: (context) => MapModal(
@@ -1225,10 +1198,6 @@ class _TaskCardState extends State<_TaskCard>
     });
 
     try {
-      print('\n?? Sending status update...');
-      print('   Claim ID: ${widget.task.claimId}');
-      print('   New Status: $newStatus');
-      
       final success = await TechnicianService.updateTaskStatus(
         widget.task.claimId,
         newStatus,
@@ -1240,8 +1209,6 @@ class _TaskCardState extends State<_TaskCard>
           _localStatus = newStatus;
         });
         final statusName = _getStatusDisplayName(newStatus);
-        print('? Backend confirmed status update to $statusName');
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1282,8 +1249,6 @@ class _TaskCardState extends State<_TaskCard>
           }
         });
       } else if (mounted) {
-        print('? Backend returned failure - status not updated');
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1319,7 +1284,6 @@ class _TaskCardState extends State<_TaskCard>
         );
       }
     } catch (e) {
-      print('? Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1386,7 +1350,7 @@ class _TaskCardState extends State<_TaskCard>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: widget.statusColor.withOpacity(0.3),
+                  color: widget.statusColor.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -1449,7 +1413,7 @@ class _TaskCardState extends State<_TaskCard>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: widget.statusColor.withOpacity(0.1),
+                              color: widget.statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -1481,7 +1445,7 @@ class _TaskCardState extends State<_TaskCard>
                       decoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(
-                            color: widget.statusColor.withOpacity(0.2),
+                            color: widget.statusColor.withValues(alpha: 0.2),
                           ),
                         ),
                       ),
@@ -1571,8 +1535,8 @@ class _TaskCardState extends State<_TaskCard>
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
-                                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Column(
@@ -1603,7 +1567,7 @@ class _TaskCardState extends State<_TaskCard>
                                                 'This task has been rejected. You need admin approval to continue working on it.',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.red.withOpacity(0.8),
+                                                  color: Colors.red.withValues(alpha: 0.8),
                                                   height: 1.4,
                                                 ),
                                               ),
@@ -1765,7 +1729,6 @@ class _TaskCardState extends State<_TaskCard>
       onPressed: isUpdating
           ? null
           : () {
-              print('🔘 Status button clicked: $status');
               _updateTaskStatus(status);
             },
       style: ElevatedButton.styleFrom(
@@ -1851,7 +1814,7 @@ class _TaskCardState extends State<_TaskCard>
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
+                            color: Colors.black.withValues(alpha: 0.6),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1925,7 +1888,7 @@ class _TaskCardState extends State<_TaskCard>
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
@@ -1952,10 +1915,6 @@ class _TaskCardState extends State<_TaskCard>
     });
 
     try {
-      print('\n? Saving task completion...');
-      print('   Claim ID: ${widget.task.claimId}');
-      print('   Task ID: ${widget.task.id}');
-
       // Call the backend API to save/complete task
       final success = await TechnicianService.updateTaskStatus(
         widget.task.claimId,
@@ -1963,8 +1922,6 @@ class _TaskCardState extends State<_TaskCard>
       );
 
       if (success && mounted) {
-        print('? Task saved and marked as completed successfully');
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -2008,8 +1965,6 @@ class _TaskCardState extends State<_TaskCard>
           }
         });
       } else if (mounted) {
-        print('? Backend returned failure - task not saved');
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -2045,7 +2000,6 @@ class _TaskCardState extends State<_TaskCard>
         );
       }
     } catch (e) {
-      print('? Error saving task: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2115,8 +2069,6 @@ class _TaskCardState extends State<_TaskCard>
       final lon = pos.longitude;
 
       // Log and show immediate feedback
-      print('📍 Accepting task ${widget.task.claimId} at $lat, $lon');
-
       // Update backend status to 'on-progress' when technician accepts
       final success = await TechnicianService.updateTaskStatus(widget.task.claimId, 'on-progress');
 
@@ -2151,18 +2103,12 @@ class _TaskCardState extends State<_TaskCard>
     });
 
     try {
-      print('\n🔓 Requesting task re-open...');
-      print('   Claim ID: ${widget.task.claimId}');
-      print('   Current Status: $_localStatus');
-
       // Call the backend API to request re-open (does NOT change status)
       final success = await TechnicianService.requestReopen(
         widget.task.claimId,
       );
 
       if (success && mounted) {
-        print('✅ Re-open request sent successfully');
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -2197,8 +2143,6 @@ class _TaskCardState extends State<_TaskCard>
           ),
         );
       } else if (mounted) {
-        print('❌ Backend returned failure - request not sent');
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -2234,7 +2178,6 @@ class _TaskCardState extends State<_TaskCard>
         );
       }
     } catch (e) {
-      print('❌ Error requesting re-open: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2302,12 +2245,10 @@ class _MapModalState extends State<MapModal> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    print('🗺️ MapModal: Initialized with coordinates (${widget.latitude}, ${widget.longitude})');
   }
 
   @override
   void dispose() {
-    print('🗺️ MapModal: Disposed');
     super.dispose();
   }
 
@@ -2325,7 +2266,7 @@ class _MapModalState extends State<MapModal> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -2440,7 +2381,7 @@ class _MapModalState extends State<MapModal> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF667eea).withOpacity(0.4),
+                                        color: const Color(0xFF667eea).withValues(alpha: 0.4),
                                         blurRadius: 8,
                                         spreadRadius: 3,
                                       ),

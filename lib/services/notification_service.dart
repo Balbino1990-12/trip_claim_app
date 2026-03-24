@@ -47,7 +47,6 @@ class NotificationService {
 
   bool _isConnected = false;
   Timer? _reconnectTimer;
-  static const int _reconnectDelay = 3;
 
   /// Get the notification stream
   Stream<NotificationMessage> get notifications => _notificationStream.stream;
@@ -66,43 +65,11 @@ class NotificationService {
 
     try {
       // Skip WebSocket entirely if not available
-      print('📊 Using polling mode for task updates');
       _isConnected = false;
       return;
     } catch (e) {
       _isConnected = false;
     }
-  }
-
-  void _startReconnectTimer() {
-    // Do nothing - no reconnection needed
-  }
-
-  void _handleMessage(dynamic message) {
-    // No-op
-  }
-
-  void _handleDisconnection() {
-    // No-op
-  }
-
-  /// Send a test notification (for debugging)
-  void sendTestNotification(String taskTitle, String clientName) {
-    final notification = NotificationMessage(
-      id: 'test_${DateTime.now().millisecondsSinceEpoch}',
-      type: 'task_assigned',
-      title: 'New Task Assigned',
-      message: '$taskTitle assigned to $clientName',
-      data: {
-        'taskTitle': taskTitle,
-        'clientName': clientName,
-        'assignedTime': DateTime.now().toString(),
-      },
-      timestamp: DateTime.now(),
-    );
-
-    print('🧪 Test notification: ${notification.title}');
-    _notificationStream.add(notification);
   }
 
   /// Send a task re-open notification
@@ -120,13 +87,11 @@ class NotificationService {
       timestamp: DateTime.now(),
     );
 
-    print('🔓 Re-open notification: ${notification.title}');
     _notificationStream.add(notification);
   }
 
   /// Emit a notification from Socket.IO or other real-time source
   void emitNotification(NotificationMessage notification) {
-    print('📢 Emitting notification: ${notification.title}');
     _notificationStream.add(notification);
   }
 
@@ -135,8 +100,7 @@ class NotificationService {
     _reconnectTimer?.cancel();
     _channel?.sink.close();
     _isConnected = false;
-    print('🛑 Notification service disconnected');
-  }
+    }
 
   /// Dispose resources
   Future<void> dispose() async {

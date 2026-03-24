@@ -61,7 +61,6 @@ class TripClaimUploadService {
       // Decode image
       final image = img.decodeImage(bytes);
       if (image == null) {
-        print('⚠️ Could not decode image, using original');
         return imageFile;
       }
 
@@ -72,15 +71,8 @@ class TripClaimUploadService {
       final compressedFile = File('${imageFile.path}_compressed.jpg');
       await compressedFile.writeAsBytes(compressed);
 
-      final originalSize = bytes.length / (1024 * 1024);
-      final compressedSize = compressed.length / (1024 * 1024);
-      print(
-        '✓ Image compressed: ${originalSize.toStringAsFixed(2)}MB → ${compressedSize.toStringAsFixed(2)}MB',
-      );
-
       return compressedFile;
     } catch (e) {
-      print('⚠️ Compression failed, using original: $e');
       return imageFile;
     }
   }
@@ -97,14 +89,6 @@ class TripClaimUploadService {
 
     while (attempt < maxRetries) {
       try {
-        print('\n📤 Uploading trip claim (attempt ${attempt + 1}/$maxRetries)');
-        print(
-          '📊 Images: ${imageFiles.length}, Description: ${description.length} chars',
-        );
-        print(
-          '📍 Location: Lat=${latitude?.toStringAsFixed(4)}, Lon=${longitude?.toStringAsFixed(4)}',
-        );
-
         final result = await _sendTripClaimRequest(
           imageFiles,
           description,
@@ -113,20 +97,17 @@ class TripClaimUploadService {
           onProgress,
         );
 
-        print('✓ Trip claim uploaded successfully!');
         return result;
       } catch (e) {
-        print('❌ Upload failed: $e');
         attempt++;
 
         if (attempt < maxRetries) {
           Duration delay = initialRetryDelay * attempt;
-          print('⏳ Retrying in ${delay.inSeconds} seconds...');
           await Future.delayed(delay);
         } else {
           throw UploadException(
             'Failed to upload trip claim after $maxRetries attempts: $e',
-            e,
+            e as Exception,
           );
         }
       }
@@ -165,10 +146,7 @@ class TripClaimUploadService {
       request.fields['timestamp'] = DateTime.now().toIso8601String();
 
       // Compress and add images
-      print('🖼️  Processing ${imageFiles.length} image(s)...');
       for (int i = 0; i < imageFiles.length; i++) {
-        print('  Compressing image ${i + 1}/${imageFiles.length}...');
-
         final originalFile = imageFiles[i];
         final compressedFile = await _compressImage(originalFile);
 
@@ -187,8 +165,6 @@ class TripClaimUploadService {
         );
         request.files.add(multipartFile);
       }
-
-      print('📡 Sending request to server...');
 
       // Send request with extended timeout
       var streamedResponse = await request.send().timeout(
@@ -211,11 +187,8 @@ class TripClaimUploadService {
         },
       );
 
-      print('📥 Response status: ${response.statusCode}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        print('✓ Server response: ${jsonResponse['message']}');
         return jsonResponse;
       } else if (response.statusCode == 408) {
         throw UploadException('Server timeout (408) - Request took too long');

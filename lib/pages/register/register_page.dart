@@ -136,8 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
           // Sync token to both services
           ApiService.setAuthToken(token);
           TripClaimUploadService.setAuthToken(token);
-          print('✓ Token synced to all services');
-        }
+          }
 
         // Save phone number locally
         await LocalStorageService.saveUserPhone(_phoneController.text);

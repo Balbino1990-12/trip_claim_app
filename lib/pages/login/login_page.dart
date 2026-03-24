@@ -150,14 +150,10 @@ class _LoginPageState extends State<LoginPage> {
 
         if (token != null) {
           // Sync token to all services
-          print('');
-          print('🔐 ✓ Login successful, syncing token to services...');
           ApiService.setAuthToken(token);
           TripClaimUploadService.setAuthToken(token);
           TechnicianService.setAuthToken(token);
-          print('✓ Token synced to all services');
-          print('');
-        }
+          }
 
         // persist any useful user data we received
         final userData = loginResponse.data?['user'];
@@ -174,12 +170,6 @@ class _LoginPageState extends State<LoginPage> {
 
         // Check if user is a technical user
         final isTechnician = _isTechnicalUser(loginResponse.data!);
-        print('');
-        print('👤 User Type Detection:');
-        print('   - Is Technician: $isTechnician');
-        print('   - User Data: ${loginResponse.data}');
-        print('');
-        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -192,13 +182,11 @@ class _LoginPageState extends State<LoginPage> {
 
           // Redirect based on user type
           if (isTechnician) {
-            print('🚀 Redirecting to Technician Landing Page...');
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const TechnicianLandingPage()),
             );
           } else {
-            print('🚀 Redirecting to Home Page...');
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomePage()),

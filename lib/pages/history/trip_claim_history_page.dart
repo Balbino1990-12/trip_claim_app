@@ -42,19 +42,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         limit: 10,
       );
 
-      print('=== DEBUG: Response received ===');
-      print('Full response: $response');
-      print('Success field: ${response['success']}');
-      print('Message: ${response['message']}');
-      print('Status code: ${response['statusCode']}');
-      print('Data type: ${response['data'].runtimeType}');
-      print('Data length: ${(response['data'] as List?)?.length ?? 0}');
-      print('Data: ${response['data']}');
-      print('================================');
-
       if (response['success'] == true) {
         final claimsData = response['data'] ?? [];
-        print('Setting claims with ${(claimsData as List).length} items');
         
         // Enrich claims with technician data from backend
         await _enrichClaimsWithTechnician(claimsData);
@@ -67,11 +56,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           _lastResponse = response;
         });
         
-        print('State updated - claims count: ${_claims.length}');
       } else {
         final errorMsg = response['message'] ?? 'Failed to load claims';
-        print('API returned success=false: $errorMsg');
-        
         setState(() {
           _errorMessage = errorMsg;
           _lastResponse = response;
@@ -82,8 +68,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         );
       }
     } catch (e) {
-      print('Exception in _loadClaims: $e');
-      print(e);
       setState(() {
         _errorMessage = 'Error: $e';
         _claims = [];
@@ -122,63 +106,35 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
   Future<Map<String, dynamic>?> _fetchTechnicianData(String technicianId) async {
     // Check cache first
     if (_technicianCache.containsKey(technicianId)) {
-      print('   📦 Technician found in cache');
       return _technicianCache[technicianId];
     }
     
     try {
-      print('   🌐 [START] getTechnicianById API call for: $technicianId');
       final techData = await ApiService.getTechnicianById(technicianId);
-      print('   🌐 [END] getTechnicianById returned: ${techData == null ? "NULL" : "Data"}');
-      
       if (techData != null) {
-        print('   📋 Response type: ${techData.runtimeType}');
-        print('   📋 Technician data fields: ${techData.keys.toList()}');
-        techData.forEach((key, value) {
-          if (value is String) {
-            print('      ├─ $key = "$value"');
-          } else {
-            print('      ├─ $key = $value (${value.runtimeType})');
-          }
-        });
         _technicianCache[technicianId] = techData;
-        print('   ✅ Technician data cached successfully');
         return techData;
-      } else {
-        print('   ❌ API returned null');
       }
-    } catch (e, stackTrace) {
-      print('❌ Error fetching technician data for $technicianId: $e');
-      print('   Stack: $stackTrace');
+      return null;
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 
   /// Enrich only 'On Progress' claims with technician data
   Future<void> _enrichClaimsWithTechnician(List<dynamic> claims) async {
-    print('\n🔍 ENRICHING ON PROGRESS CLAIMS WITH TECHNICIAN DATA...');
-    print('Total claims to process: ${claims.length}');
-    
     for (var i = 0; i < claims.length; i++) {
       var claim = claims[i];
-      print('\n[CLAIM $i] Processing...');
-      
       if (claim is! Map) {
-        print('   ⏭️  Not a Map');
         continue;
       }
       
       final status = claim['status']?.toString().toLowerCase() ?? '';
       final isOnProgress = status.contains('progress') || status == 'on progress' || status == 'inprogress';
       
-      print('   Status: "$status" -> OnProgress: $isOnProgress');
-      
       if (!isOnProgress) {
-        print('   ⏭️  Skipping - not On Progress');
         continue;
       }
-      
-      print('   📋 Processing ON PROGRESS claim ${claim['id']}');
       
       // Check 1: Flattened fields in claim
       if (claim['technicalUserName'] != null || claim['technicalUserPhone'] != null) {
@@ -186,7 +142,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           'name': claim['technicalUserName'] ?? 'N/A',
           'phoneNumber': claim['technicalUserPhone'] ?? 'N/A',
         };
-        print('   ✅ Found flattened technician fields: ${claim['technicalUserName']}');
         continue;
       }
       
@@ -196,47 +151,35 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           'name': claim['name'] ?? 'N/A',
           'phoneNumber': claim['phoneNumber'] ?? 'N/A',
         };
-        print('   ✅ Found name/phoneNumber fields');
         continue;
       }
       
       // Check 2: assignedTechnicalUserId - fetch via API
       if (claim['assignedTechnicalUserId'] != null) {
         final techId = claim['assignedTechnicalUserId'];
-        print('   🔄 Found assignedTechnicalUserId: $techId');
-        
         final techData = await _fetchTechnicianData(techId);
         
         if (techData != null) {
           claim['_technicianData'] = techData;
-          print('   ✅ Technician data FETCHED and SET');
           continue;
         } else {
-          print('   ⚠️ Technician API returned null');
-        }
+          }
       }
       
       // Check 3: Technician object fields
       if (claim['assignedTechnician'] is Map) {
         claim['_technicianData'] = claim['assignedTechnician'];
-        print('   ✅ Found assignedTechnician object');
-      } else if (claim['assigned_technician'] is Map) {
+        } else if (claim['assigned_technician'] is Map) {
         claim['_technicianData'] = claim['assigned_technician'];
-        print('   ✅ Found assigned_technician object');
-      } else if (claim['Technician'] is Map) {
+        } else if (claim['Technician'] is Map) {
         claim['_technicianData'] = claim['Technician'];
-        print('   ✅ Found Technician object');
-      } else if (claim['technician'] is Map) {
+        } else if (claim['technician'] is Map) {
         claim['_technicianData'] = claim['technician'];
-        print('   ✅ Found technician object');
-      } else {
-        print('   ℹ️ No technician data found');
-      }
+        } else {
+        }
     }
     
-    print('\n═══════════════════════════════');
-    print('✅ ENRICHMENT COMPLETE\n');
-  }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -321,7 +264,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                             boxShadow: _selectedStatus == status
                                 ? [
                                     BoxShadow(
-                                      color: Colors.blue.withOpacity(0.15),
+                                      color: Colors.blue.withValues(alpha: 0.15),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     )
@@ -396,7 +339,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -465,8 +408,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
   }
 
   Widget _buildClaimCard(dynamic claim) {
-    print('Building claim card for: ${claim['id']}');
-    
     final status = (claim['status'] ?? 'pending').toString().trim().toLowerCase();
     final statusColor = _getStatusColor(status);
     
@@ -492,46 +433,23 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
     final imagesCount = images.length;
     final notes = claim['notes'] ?? '';
     
-    print('\n📋 ===== CLAIM DATA =====');
-    print('Claim ID: ${claim['id']}');
-    print('Raw Status: "${claim['status']}" (type: ${claim['status'].runtimeType})');
-    print('Normalized Status: "$status"');
-    print('All fields: ${claim.keys.toList()}');
-    
-    // Print all claim data for debugging
-    claim.forEach((key, value) {
-      print('  $key => $value (${value.runtimeType})');
-    });
-    print('═════════════════════════\n');
-    
-    // Extract technician info - only for 'On Progress' status (Option B: Flattened Fields)
+    // Extract technician info - only for 'On Progress' status
     String technicianName = 'N/A';
     String technicianPhone = 'N/A';
     String clientPhone = 'N/A';
-    final isOnProgress = status.contains('progress'); // Works with "on progress", "on-progress", "inprogress", etc.
-    
-    print('🔍 EXTRACTING TECHNICIAN INFO (On Progress: $isOnProgress)...');
+    final isOnProgress = status.contains('progress');
     
     if (isOnProgress) {
-      // For Option B: Backend sends name + phoneNumber directly in claim
-      // OR we fetched it via assignedTechnicalUserId
-      
-      print('   🔍 Extracting technician info...');
+      // For On Progress status: extract technician name and phone
       if (claim['_technicianData'] is Map) {
         final techData = claim['_technicianData'] as Map<String, dynamic>;
         technicianName = techData['name'] ?? techData['Username'] ?? 'N/A';
         technicianPhone = techData['phoneNumber'] ?? techData['PhoneNumber'] ?? 'N/A';
       } else {
-        // Try direct claim fields - check all possible field names
+        // Try direct claim fields
         technicianName = claim['technicalUserName'] ?? claim['name'] ?? 'N/A';
         technicianPhone = claim['technicalUserPhone'] ?? claim['phoneNumber'] ?? 'N/A';
       }
-      
-      print('   ✅ Technician data extracted:');
-      print('      Name: $technicianName');
-      print('      Phone: $technicianPhone');
-    } else {
-      print('   ⏭️ Skipping - not On Progress status');
     }
     
     // Get client phone
@@ -543,20 +461,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       clientPhone = claim['UserPhone'];
     }
     
-    print('   👤 Client Phone: $clientPhone');
-    
     final isInProgress = isOnProgress;
-    
-    print('\n✅ EXTRACTED DATA:');
-    print('   🔧 Technician Name: $technicianName');
-    print('   🔧 Technician Phone: $technicianPhone');
-    print('   👤 Client Phone: $clientPhone');
-    print('═══════════════════════════════\n');
-    
-    print('📊 Status check: "$status" -> isInProgress: $isInProgress');
-    print('🔧 Final Data - Technician: $technicianName ($technicianPhone), Client: $clientPhone');
-
-    print('Claim details - description: $description, location: $location, status: $status');
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -569,7 +474,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
+            color: Colors.grey.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -612,7 +517,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
+                    color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -860,18 +765,13 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                         final normalizedUrl = (rawImage != null && !isLikelyBase64 && !isDataUri)
                             ? _normalizeImageUrl(rawImage)
                             : '(in-memory/base64)';
-                        print('IMAGE DEBUG -> raw: $normalizedPreview');
-                        print('IMAGE DEBUG -> isDataUri: $isDataUri, isLikelyBase64: $isLikelyBase64');
-                        print('IMAGE DEBUG -> normalized URL: $normalizedUrl');
-                      } catch (e) {
-                        print('IMAGE DEBUG -> failed to print debug info: $e');
-                      }
+                        } catch (e) {
+                        }
 
                       return GestureDetector(
                         onTap: () {
                           final preview = (rawImage ?? '').length > 60 ? '${(rawImage ?? '').substring(0, 60)}...' : (rawImage ?? '');
-                          print('Tapped image: $preview');
-                        },
+                          },
                         child: Container(
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey[300]!),
@@ -888,7 +788,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) {
                                             final imageUrl = _normalizeImageUrl(rawImage!);
-                                            print('Image.network error for URL: $imageUrl -> $error');
                                             return _buildImageFromUrlFallback(imageUrl);
                                           },
                                           loadingBuilder: (context, child, progress) {
@@ -954,21 +853,14 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
       status = status.trim().toLowerCase();
     }
     
-    print('📊 _buildProgressTimeline called with: "$status"');
-    
     // Map status to progress index
     int currentStep = _getProgressStep(status);
-    print('📊 Current step after mapping: $currentStep');
-    
     if (currentStep < 0) {
       currentStep = 0; // Default to waiting state
-      print('⚠️ Unknown status, defaulting to step 0');
-    }
+      }
     
     int totalSteps = 4;
     int progressPercent = ((currentStep + 1) / totalSteps * 100).toInt();
-    print('📊 Progress: Step $currentStep/$totalSteps = $progressPercent%');
-    
     final steps = [
       {
         'icon': Icons.hourglass_empty,
@@ -1086,17 +978,17 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withOpacity(0.7),
+                        color: Colors.orange.withValues(alpha: 0.7),
                         blurRadius: 16,
                         spreadRadius: 3,
                       ),
                       BoxShadow(
-                        color: Colors.pink.withOpacity(0.5),
+                        color: Colors.pink.withValues(alpha: 0.5),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: Colors.blue.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: Offset(0, 3),
                       ),
@@ -1118,7 +1010,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         blurRadius: 6,
                         spreadRadius: 0,
                       ),
@@ -1219,7 +1111,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color.withOpacity(0.8),
+                  color.withValues(alpha: 0.8),
                   color,
                 ],
               )
@@ -1229,26 +1121,26 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         border: Border.all(
           color: isActive 
               ? color 
-              : (isCompleted ? color.withOpacity(0.7) : Colors.grey[300]!),
+              : (isCompleted ? color.withValues(alpha: 0.7) : Colors.grey[300]!),
           width: isActive ? 4 : (isCompleted ? 2 : 1.5),
         ),
         boxShadow: [
           if (isActive)
             BoxShadow(
-              color: color.withOpacity(0.6),
+              color: color.withValues(alpha: 0.6),
               blurRadius: 14,
               spreadRadius: 3,
             ),
           if (isActive)
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 6,
               spreadRadius: 1,
               offset: Offset(0, 4),
             ),
           if (isCompleted && !isActive)
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               blurRadius: 6,
               spreadRadius: 1,
             ),
@@ -1283,13 +1175,8 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         return 3; // Claim Solved
       default:
         // Debug: log unknown status
-        print('⚠️ Unknown status in _getProgressStep: "$status" -> "$cleanStatus"');
         return -1; // Unknown (excludes approved and other statuses)
     }
-  }
-
-  Widget _buildRepeatingBikeAnimation() {
-    return _RepeatingBikeAnimation();
   }
 
   Widget _buildPagination() {
@@ -1309,7 +1196,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                     boxShadow: _currentPage > 1
                         ? [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.2),
+                              color: Colors.blue.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             )
@@ -1364,7 +1251,7 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
                     boxShadow: _currentPage < _totalPages
                         ? [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.2),
+                              color: Colors.blue.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             )
@@ -1443,12 +1330,10 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
         bytes,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          print('Error decoding base64 image: $error');
           return _buildImageError();
         },
       );
     } catch (e) {
-      print('Failed to decode base64: $e');
       return _buildImageError();
     }
   }
@@ -1462,7 +1347,6 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
           return _buildImageLoading();
         }
         if (snapshot.hasError) {
-          print('Fallback decode error: ${snapshot.error}');
           return _buildImageError();
         }
         return snapshot.data ?? _buildImageError();
@@ -1474,24 +1358,17 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
   Future<Widget> _fetchAndDecodeImageAsBase64(String imageUrl) async {
     // if we're offline just bail early
     if (!await NetworkService().isConnected()) {
-      print('   ⚠️ Fallback aborted – no network connection');
       return _buildImageError();
     }
     try {
-      print('📥 Fallback: fetching image as binary...');
       final client = HttpClient();
       final request = await client.getUrl(Uri.parse(imageUrl));
       request.headers.set('Connection', 'close');
       final response = await request.close();
       
-      print('   📊 Status: ${response.statusCode}');
-      
       if (response.statusCode == 200) {
         final bodyBytes = await response.fold<List<int>>([], (p, chunk) => p..addAll(chunk));
-        print('   ✅ Received ${bodyBytes.length} bytes');
-        
         if (bodyBytes.isEmpty) {
-          print('   ❌ Empty response');
           return _buildImageError();
         }
         
@@ -1509,18 +1386,13 @@ class _TripClaimHistoryPageState extends State<TripClaimHistoryPage> {
             } catch (_) {
               textSnippet = '<unable to convert to text>';
             }
-            print('   ❌ Image.memory error: $error');
-            print('      first $snippetLength bytes (hex): $hexSnippet');
-            print('      text snippet: $textSnippet');
             return _buildImageError();
           },
         );
       } else {
-        print('   ❌ HTTP ${response.statusCode}');
         return _buildImageError();
       }
     } catch (e) {
-      print('   ❌ Fallback error: $e');
       return _buildImageError();
     }
   }
@@ -1793,7 +1665,7 @@ class _RepeatingBikeAnimationState extends State<_RepeatingBikeAnimation>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue[300]!.withOpacity(0.6),
+                        color: Colors.blue[300]!.withValues(alpha: 0.6),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

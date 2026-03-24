@@ -68,18 +68,16 @@ class ImageUploadService {
           );
         }
 
-        print('Uploading image (attempt ${attempt + 1}/$maxRetries): ${imageFile.path}');
+        : ${imageFile.path}');
 
         final result = await _uploadImage(imageFile, onProgress: onProgress);
         return result;
       } on UploadException catch (e) {
-        print('Upload failed: ${e.message}');
         attempt++;
 
         if (attempt < maxRetries) {
           // Exponential backoff: 2s, 4s, 8s
           Duration delay = initialRetryDelay * (attempt);
-          print('Retrying in ${delay.inSeconds} seconds...');
           await Future.delayed(delay);
         } else {
           throw UploadException(
@@ -126,7 +124,6 @@ class ImageUploadService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        print('✓ Image uploaded successfully');
         return jsonResponse;
       } else {
         final errorBody = _parseErrorResponse(response.body);
@@ -158,8 +155,6 @@ class ImageUploadService {
 
     for (int i = 0; i < imageFiles.length; i++) {
       try {
-        print('Processing image ${i + 1}/$totalFiles');
-
         final result = await uploadImageWithRetry(
           imageFiles[i],
           onProgress: (sent, total) {
@@ -181,8 +176,7 @@ class ImageUploadService {
       } catch (e) {
         failedFiles.add(imageFiles[i].path);
         errors.add('${imageFiles[i].path}: $e');
-        print('✗ Failed to upload ${imageFiles[i].path}: $e');
-      }
+        }
     }
 
     return UploadBatchResult(

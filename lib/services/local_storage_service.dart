@@ -22,7 +22,6 @@ class LocalStorageService {
       final jsonString = jsonEncode(claims);
       return await prefs.setString(_claimsKey, jsonString);
     } catch (e) {
-      print('Error saving claim locally: $e');
       return false;
     }
   }
@@ -40,7 +39,6 @@ class LocalStorageService {
       final List<dynamic> decoded = jsonDecode(jsonString);
       return decoded.cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Error retrieving cached claims: $e');
       return [];
     }
   }
@@ -54,7 +52,6 @@ class LocalStorageService {
           .toList()
           .cast<Map<String, dynamic>>();
     } catch (e) {
-      print('Error retrieving unsynced claims: $e');
       return [];
     }
   }
@@ -72,7 +69,6 @@ class LocalStorageService {
       }
       return false;
     } catch (e) {
-      print('Error marking claim as synced: $e');
       return false;
     }
   }
@@ -90,7 +86,6 @@ class LocalStorageService {
       }
       return false;
     } catch (e) {
-      print('Error deleting claim: $e');
       return false;
     }
   }
@@ -101,7 +96,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_claimsKey);
     } catch (e) {
-      print('Error clearing claims: $e');
       return false;
     }
   }
@@ -112,7 +106,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_apiUrlKey, url);
     } catch (e) {
-      print('Error saving API URL: $e');
       return false;
     }
   }
@@ -123,7 +116,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_apiUrlKey);
     } catch (e) {
-      print('Error retrieving API URL: $e');
       return null;
     }
   }
@@ -134,7 +126,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_tokenKey, token);
     } catch (e) {
-      print('Error saving token: $e');
       return false;
     }
   }
@@ -145,7 +136,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_tokenKey);
     } catch (e) {
-      print('Error retrieving token: $e');
       return null;
     }
   }
@@ -156,7 +146,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_tokenKey);
     } catch (e) {
-      print('Error clearing token: $e');
       return false;
     }
   }
@@ -167,7 +156,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_userPhoneKey, phone);
     } catch (e) {
-      print('Error saving user phone: $e');
       return false;
     }
   }
@@ -178,7 +166,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_userPhoneKey);
     } catch (e) {
-      print('Error retrieving user phone: $e');
       return null;
     }
   }
@@ -193,7 +180,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_userMeterKey, meter);
     } catch (e) {
-      print('Error saving user meter: $e');
       return false;
     }
   }
@@ -204,7 +190,6 @@ class LocalStorageService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_userMeterKey);
     } catch (e) {
-      print('Error retrieving user meter: $e');
       return null;
     }
   }
@@ -217,7 +202,6 @@ class LocalStorageService {
       await prefs.remove(_userPhoneKey);
       return true;
     } catch (e) {
-      print('Error clearing all data: $e');
       return false;
     }
   }
@@ -234,7 +218,6 @@ class LocalStorageService {
         'syncedClaims': claims.length - unsynced.length,
       };
     } catch (e) {
-      print('Error getting storage stats: $e');
       return {'totalClaims': 0, 'unsyncedClaims': 0, 'syncedClaims': 0};
     }
   }

@@ -33,8 +33,7 @@ class NetworkService {
       _updateUrlBasedOnNetwork();
     });
 
-    print('✓ Network monitoring initialized');
-  }
+    }
 
   /// Update API URL based on current network type
   Future<void> _updateUrlBasedOnNetwork() async {
@@ -44,24 +43,18 @@ class NetworkService {
 
       if (result.contains(ConnectivityResult.wifi)) {
         newUrl = networkApiUrls['wifi']!;
-        print('📶 Connected to WiFi');
-      } else if (result.contains(ConnectivityResult.mobile)) {
+        } else if (result.contains(ConnectivityResult.mobile)) {
         newUrl = networkApiUrls['mobile']!;
-        print('📱 Connected to Mobile Network');
-      } else if (result.contains(ConnectivityResult.ethernet)) {
+        } else if (result.contains(ConnectivityResult.ethernet)) {
         newUrl = networkApiUrls['ethernet']!;
-        print('🔌 Connected to Ethernet');
-      } else if (result.contains(ConnectivityResult.none)) {
-        print('❌ No Internet Connection');
+        } else if (result.contains(ConnectivityResult.none)) {
         return;
       }
 
       // Update API service base URL
       ApiService.setBaseUrl(newUrl);
-      print('✓ API Base URL updated: $newUrl');
-    } catch (e) {
-      print('✗ Error updating network configuration: $e');
-    }
+      } catch (e) {
+      }
   }
 
   /// Get current connectivity status
@@ -93,6 +86,5 @@ class NetworkService {
   /// Update network URL mapping (useful for dynamic configuration)
   static void updateNetworkUrl(String networkType, String url) {
     networkApiUrls[networkType] = url;
-    print('✓ Updated $networkType URL to: $url');
-  }
+    }
 }
